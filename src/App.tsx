@@ -30,32 +30,28 @@ export default function App() {
     if (savedLanguage) setLanguage(savedLanguage as Language);
   }, []);
 
-  const isCloudUpdate = React.useRef(false);
-
   // Listen to Cloud Updates
   useEffect(() => {
     const unsubscribe = listenToCloud((data: SyncData) => {
-      isCloudUpdate.current = true;
       if (data.members) setMembers(data.members);
       if (data.attendanceRecords) setAttendanceRecords(data.attendanceRecords);
-      // Reset the flag after React processes the state update
-      setTimeout(() => { isCloudUpdate.current = false; }, 500);
     });
 
     return () => {
-      if (unsubscribe) unsubscribe();
+      unsubscribe();
     };
   }, []);
 
-  // Save data to localStorage and Cloud
+  // Save data to localStorage
   useEffect(() => {
     localStorage.setItem('yg_members', JSON.stringify(members));
     localStorage.setItem('yg_attendance', JSON.stringify(attendanceRecords));
-    
-    if (!isCloudUpdate.current && (members.length > 0 || attendanceRecords.length > 0)) {
-      syncToCloud({ members, attendanceRecords, updatedAt: new Date().toISOString() });
-    }
   }, [members, attendanceRecords]);
+
+  // Helper to sync to cloud ONLY on explicitly triggered user modifications
+  const pushToCloud = (m: Member[], a: AttendanceRecord[]) => {
+    syncToCloud({ members: m, attendanceRecords: a, updatedAt: new Date().toISOString() });
+  };
 
   useEffect(() => {
     localStorage.setItem('yg_language', language);
@@ -83,43 +79,52 @@ export default function App() {
       gpsName: data.gpsName,
       joinDate: new Date().toISOString(),
     };
-    setMembers([...members, newMember]);
+    const newMembers = [...members, newMember];
+    setMembers(newMembers);
+    pushToCloud(newMembers, attendanceRecords);
   };
 
   const handleUpdateMember = (updatedMember: Member) => {
-    setMembers(members.map(m => m.id === updatedMember.id ? updatedMember : m));
+    const newMembers = members.map(m => m.id === updatedMember.id ? updatedMember : m);
+    setMembers(newMembers);
+    pushToCloud(newMembers, attendanceRecords);
   };
 
   const handleDeleteMember = (id: string) => {
-    setMembers(members.filter((m) => m.id !== id));
+    const newMembers = members.filter((m) => m.id !== id);
     // Also clean up attendance records
-    setAttendanceRecords(prev => prev.map(record => ({
+    const newAttendance = attendanceRecords.map(record => ({
       ...record,
       presentMemberIds: record.presentMemberIds.filter(mid => mid !== id)
-    })));
+    }));
+    setMembers(newMembers);
+    setAttendanceRecords(newAttendance);
+    pushToCloud(newMembers, newAttendance);
   };
 
   const handleToggleAttendance = (date: string, memberId: string) => {
-    setAttendanceRecords((prev) => {
-      const existingRecord = prev.find((r) => r.date === date);
-      if (existingRecord) {
-        const isPresent = existingRecord.presentMemberIds.includes(memberId);
-        const newPresentIds = isPresent
-          ? existingRecord.presentMemberIds.filter((id) => id !== memberId)
-          : [...existingRecord.presentMemberIds, memberId];
-        
-        return prev.map((r) => 
-          r.date === date ? { ...r, presentMemberIds: newPresentIds } : r
-        );
-      } else {
-        return [...prev, { date, presentMemberIds: [memberId] }];
-      }
-    });
+    let newAttendance = [...attendanceRecords];
+    const existingRecord = newAttendance.find((r) => r.date === date);
+    if (existingRecord) {
+      const isPresent = existingRecord.presentMemberIds.includes(memberId);
+      const newPresentIds = isPresent
+        ? existingRecord.presentMemberIds.filter((id) => id !== memberId)
+        : [...existingRecord.presentMemberIds, memberId];
+      
+      newAttendance = newAttendance.map((r) => 
+        r.date === date ? { ...r, presentMemberIds: newPresentIds } : r
+      );
+    } else {
+      newAttendance = [...newAttendance, { date, presentMemberIds: [memberId] }];
+    }
+    setAttendanceRecords(newAttendance);
+    pushToCloud(members, newAttendance);
   };
 
   const handleImport = (data: { members: Member[]; attendanceRecords: AttendanceRecord[] }) => {
     setMembers(data.members);
     setAttendanceRecords(data.attendanceRecords);
+    pushToCloud(data.members, data.attendanceRecords);
   };
 
   const handleClearAll = () => {
@@ -127,6 +132,7 @@ export default function App() {
     setAttendanceRecords([]);
     localStorage.removeItem('yg_members');
     localStorage.removeItem('yg_attendance');
+    pushToCloud([], []);
   };
 
   const navItems = [
