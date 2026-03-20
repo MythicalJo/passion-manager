@@ -92,15 +92,23 @@ export const syncToCloud = async (data: SyncData): Promise<boolean> => {
         }
       })
     });
+    if (!res.ok) {
+        lastError = `PATCH Failed. Status: ${res.status}`;
+    }
     return res.ok;
-  } catch (error) {
+  } catch (error: any) {
+    lastError = `PATCH Throw: ${error?.message}`;
     console.error("Error syncing to gist:", error);
     return false;
   }
 };
 
 let lastSyncDate = new Date(0).toISOString();
+let lastError = "None";
 let timer: any = null;
+
+export const getLastSyncDate = () => lastSyncDate;
+export const getLastError = () => lastError;
 
 export const listenToCloud = (onDataUpdate: (data: SyncData) => void): (() => void) => {
   const token = getGithubToken();
@@ -140,14 +148,21 @@ export const listenToCloud = (onDataUpdate: (data: SyncData) => void): (() => vo
             if (fileContent) {
                 try {
                   const parsed = JSON.parse(fileContent) as SyncData;
+                  lastError = "None";
                   onDataUpdate(parsed);
                 } catch(e) {
+                  lastError = "Failed to parse SyncData JSON";
                   console.error("Failed to parse SyncData JSON", e);
                 }
+            } else {
+              lastError = "fileContent was null/empty";
             }
+        } else {
+          lastError = "passion_manager_sync.json missing from generic gist";
         }
       }
-    } catch (error) {
+    } catch (error: any) {
+       lastError = error?.message || "Unknown gist polling error";
        console.error("Gist polling error:", error);
     }
   };

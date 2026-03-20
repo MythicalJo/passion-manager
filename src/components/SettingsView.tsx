@@ -1,6 +1,6 @@
-import React, { useRef } from 'react';
-import { Download, Upload, Trash2, Globe, ShieldAlert, Cloud } from 'lucide-react';
-import { saveGithubConfig, clearGithubConfig, getGithubToken, getGistId, initGist } from '../lib/gists';
+import React, { useRef, useState, useEffect } from 'react';
+import { Download, Upload, Trash2, Globe, ShieldAlert, Cloud, Bug } from 'lucide-react';
+import { saveGithubConfig, clearGithubConfig, getGithubToken, getGistId, initGist, getLastSyncDate, getLastError } from '../lib/gists';
 import { Member, AttendanceRecord } from '../types';
 import { Language, translations } from '../translations';
 import { motion } from 'motion/react';
@@ -31,6 +31,19 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const [isConnected, setIsConnected] = React.useState(!!getGithubToken() && !!getGistId());
   const [isConnecting, setIsConnecting] = React.useState(false);
   const [configError, setConfigError] = React.useState(false);
+
+  const [debugDate, setDebugDate] = useState(getLastSyncDate());
+  const [debugError, setDebugError] = useState(getLastError());
+
+  useEffect(() => {
+    if (isConnected) {
+      const interval = setInterval(() => {
+        setDebugDate(getLastSyncDate());
+        setDebugError(getLastError());
+      }, 2000);
+      return () => clearInterval(interval);
+    }
+  }, [isConnected]);
 
   const handleConnectCloud = async () => {
     setIsConnecting(true);
@@ -205,6 +218,16 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 <p className="text-xs text-slate-500 uppercase tracking-wider font-bold mb-1">{t.gistIdStr || "Gist ID"}</p>
                 <code className="text-sm font-mono text-slate-800 font-bold select-all">{getGistId()}</code>
               </div>
+              
+              <div className="p-4 bg-slate-800 rounded-xl flex flex-col gap-2 shadow-inner">
+                <div className="flex items-center gap-2 mb-1">
+                  <Bug className="w-4 h-4 text-emerald-400" />
+                  <p className="text-xs text-emerald-400 uppercase tracking-wider font-bold">Debug Status</p>
+                </div>
+                <p className="text-xs text-slate-300 font-mono">Last Sync Date: <span className="text-white">{debugDate}</span></p>
+                <p className="text-xs text-slate-300 font-mono flex flex-col gap-1">Last API Error: <span className={debugError === 'None' ? 'text-emerald-400' : 'text-rose-400'}>{debugError}</span></p>
+              </div>
+
               <button
                 onClick={handleDisconnectCloud}
                 className="py-3 md:py-4 px-4 md:px-6 rounded-xl md:rounded-2xl bg-rose-50 text-rose-600 font-bold hover:bg-rose-100 transition-all text-sm md:text-base border border-rose-200"
