@@ -9,7 +9,7 @@ import { SettingsView } from './components/SettingsView';
 import { Language, translations } from './translations';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from './lib/utils';
-import { syncToCloud, listenToCloud, SyncData } from './lib/firebase';
+import { syncToCloud, listenToCloud, SyncData } from './lib/gists';
 
 export default function App() {
   const [view, setView] = useState<ViewMode>('attendance');

@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 import { Download, Upload, Trash2, Globe, ShieldAlert, Cloud } from 'lucide-react';
-import { saveFirebaseConfig, clearFirebaseConfig, getFirebaseConfig, initFirebase } from '../lib/firebase';
+import { saveGithubConfig, clearGithubConfig, getGithubToken, getGistId, initGist } from '../lib/gists';
 import { Member, AttendanceRecord } from '../types';
 import { Language, translations } from '../translations';
 import { motion } from 'motion/react';
@@ -26,29 +26,36 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showConfirmClear, setShowConfirmClear] = React.useState(false);
   const [importStatus, setImportStatus] = React.useState<'idle' | 'success' | 'error'>('idle');
-  const [firebaseConfig, setFirebaseConfig] = React.useState('');
-  const [isConnected, setIsConnected] = React.useState(!!getFirebaseConfig());
+  const [githubToken, setGithubToken] = React.useState(getGithubToken() || '');
+  const [gistId, setGistId] = React.useState(getGistId() || '');
+  const [isConnected, setIsConnected] = React.useState(!!getGithubToken() && !!getGistId());
+  const [isConnecting, setIsConnecting] = React.useState(false);
   const [configError, setConfigError] = React.useState(false);
 
-  const handleConnectCloud = () => {
-    if (saveFirebaseConfig(firebaseConfig)) {
-      if (initFirebase()) {
+  const handleConnectCloud = async () => {
+    setIsConnecting(true);
+    if (saveGithubConfig(githubToken, gistId)) {
+      const success = await initGist();
+      if (success) {
         setIsConnected(true);
         setConfigError(false);
         window.location.reload();
       } else {
         setConfigError(true);
-        clearFirebaseConfig();
+        clearGithubConfig();
+        setIsConnecting(false);
       }
     } else {
       setConfigError(true);
+      setIsConnecting(false);
     }
   };
 
   const handleDisconnectCloud = () => {
-    clearFirebaseConfig();
+    clearGithubConfig();
     setIsConnected(false);
-    setFirebaseConfig('');
+    setGithubToken('');
+    setGistId('');
     window.location.reload();
   };
 
@@ -193,31 +200,51 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           <p className="text-slate-500 text-sm mb-6 max-w-md">{t.cloudSyncDesc}</p>
           
           {isConnected ? (
-            <button
-              onClick={handleDisconnectCloud}
-              className="py-3 md:py-4 px-4 md:px-6 rounded-xl md:rounded-2xl bg-rose-50 text-rose-600 font-bold hover:bg-rose-100 transition-all text-sm md:text-base border border-rose-200"
-            >
-              {t.disconnect}
-            </button>
+            <div className="flex flex-col gap-4">
+              <div className="p-4 bg-slate-50 border border-slate-100 rounded-xl">
+                <p className="text-xs text-slate-500 uppercase tracking-wider font-bold mb-1">{t.gistIdStr || "Gist ID"}</p>
+                <code className="text-sm font-mono text-slate-800 font-bold select-all">{getGistId()}</code>
+              </div>
+              <button
+                onClick={handleDisconnectCloud}
+                className="py-3 md:py-4 px-4 md:px-6 rounded-xl md:rounded-2xl bg-rose-50 text-rose-600 font-bold hover:bg-rose-100 transition-all text-sm md:text-base border border-rose-200"
+              >
+                {t.disconnect}
+              </button>
+            </div>
           ) : (
             <div className="flex flex-col gap-3">
-              <textarea
-                value={firebaseConfig}
+              <input
+                type="password"
+                value={githubToken}
                 onChange={(e) => {
-                  setFirebaseConfig(e.target.value);
+                  setGithubToken(e.target.value);
                   setConfigError(false);
                 }}
-                placeholder={`{\n  "apiKey": "...",\n  "authDomain": "...",\n  "projectId": "...",\n  ...\n}`}
-                className={`w-full h-32 p-4 text-sm font-mono bg-slate-50 rounded-xl border-2 transition-colors resize-none placeholder-slate-300 focus:outline-none focus:bg-white ${
+                placeholder={t.githubTokenStr || "GitHub Access Token"}
+                className={`w-full p-4 text-sm font-mono bg-slate-50 rounded-xl border-2 transition-colors placeholder-slate-400 focus:outline-none focus:bg-white ${
+                  configError ? 'border-rose-300 text-rose-900 focus:border-rose-500' : 'border-slate-100 text-slate-700 focus:border-blue-500'
+                }`}
+              />
+              <input
+                type="text"
+                value={gistId}
+                onChange={(e) => {
+                  setGistId(e.target.value);
+                  setConfigError(false);
+                }}
+                placeholder={t.gistIdStr || "Gist ID (Leave empty if first device)"}
+                className={`w-full p-4 text-sm font-mono bg-slate-50 rounded-xl border-2 transition-colors placeholder-slate-400 focus:outline-none focus:bg-white ${
                   configError ? 'border-rose-300 text-rose-900 focus:border-rose-500' : 'border-slate-100 text-slate-700 focus:border-blue-500'
                 }`}
               />
               {configError && <p className="text-rose-500 text-xs font-bold px-1">{t.invalidConfig}</p>}
               <button
                 onClick={handleConnectCloud}
-                className="py-3 md:py-4 px-4 md:px-6 rounded-xl md:rounded-2xl bg-blue-600 text-white font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 text-sm md:text-base self-start"
+                disabled={isConnecting}
+                className="py-3 md:py-4 px-4 md:px-6 rounded-xl md:rounded-2xl bg-blue-600 text-white font-bold hover:bg-blue-700 disabled:opacity-50 transition-all shadow-lg shadow-blue-200 text-sm md:text-base self-start"
               >
-                {t.connect}
+                {isConnecting ? '...' : t.connect}
               </button>
             </div>
           )}
