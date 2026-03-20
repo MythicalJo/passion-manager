@@ -37,7 +37,6 @@ export const MemberList: React.FC<MemberListProps> = ({ members, onAddMember, on
   const [searchQuery, setSearchQuery] = useState('');
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
-  const sectionRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
 
   // Scroll to form when adding or editing
   React.useEffect(() => {
@@ -104,12 +103,7 @@ export const MemberList: React.FC<MemberListProps> = ({ members, onAddMember, on
     return Object.keys(groupedMembers).sort();
   }, [groupedMembers]);
 
-  const scrollToLetter = (letter: string) => {
-    const element = sectionRefs.current[letter];
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  };
+
 
   const isDuplicateName = useMemo(() => {
     const name = formData.name.trim().toLowerCase();
@@ -503,7 +497,7 @@ export const MemberList: React.FC<MemberListProps> = ({ members, onAddMember, on
       </div>
 
       <div className="flex-1 flex overflow-hidden relative">
-        <div ref={scrollContainerRef} className="flex-1 overflow-y-auto pr-10 space-y-6 scroll-smooth no-scrollbar">
+        <div ref={scrollContainerRef} className="flex-1 overflow-y-auto space-y-6 scroll-smooth no-scrollbar">
           <AnimatePresence mode="popLayout">
             {filteredAndSortedMembers.length === 0 ? (
               <div className="text-center py-12 text-slate-400">
@@ -513,8 +507,7 @@ export const MemberList: React.FC<MemberListProps> = ({ members, onAddMember, on
             ) : (
               alphabet.map((letter) => (
                 <div 
-                  key={letter} 
-                  ref={el => sectionRefs.current[letter] = el}
+                  key={letter}
                   className="space-y-3"
                 >
                   <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-sm py-2">
@@ -708,27 +701,7 @@ export const MemberList: React.FC<MemberListProps> = ({ members, onAddMember, on
           </AnimatePresence>
         </div>
 
-        {/* Alphabet Sidebar */}
-        {alphabet.length > 0 && (
-          <div className="absolute right-0 top-0 bottom-0 w-10 flex flex-col items-center justify-center z-30 bg-white/40 backdrop-blur-[2px] border-l border-slate-100/50">
-            <div className="flex flex-col items-center gap-1 overflow-y-auto max-h-[80%] py-4 no-scrollbar">
-              {alphabet.map(letter => (
-                <button
-                  key={letter}
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    scrollToLetter(letter);
-                  }}
-                  className="text-[11px] font-black text-slate-400 hover:text-indigo-600 active:text-indigo-700 transition-all w-full py-1.5 px-2 flex items-center justify-center active:scale-150 touch-none"
-                >
-                  {letter}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
+
       </div>
     </div>
   );
