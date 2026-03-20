@@ -120,8 +120,7 @@ export const listenToCloud = (onDataUpdate: (data: SyncData) => void): (() => vo
       const res = await fetch(`https://api.github.com/gists/${gistId}?t=${Date.now()}`, {
         headers: {
           'Accept': 'application/vnd.github.v3+json',
-          'Authorization': `token ${token}`,
-          'Cache-Control': 'no-cache'
+          'Authorization': `token ${token}`
         }
       });
       if (!res.ok) return;
