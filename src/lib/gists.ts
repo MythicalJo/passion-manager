@@ -109,10 +109,11 @@ export const listenToCloud = (onDataUpdate: (data: SyncData) => void): (() => vo
 
   const poll = async () => {
     try {
-      const res = await fetch(`https://api.github.com/gists/${gistId}?t=\${Date.now()}`, {
+      const res = await fetch(`https://api.github.com/gists/${gistId}?t=${Date.now()}`, {
         headers: {
           'Accept': 'application/vnd.github.v3+json',
-          'Authorization': `token ${token}`
+          'Authorization': `token ${token}`,
+          'Cache-Control': 'no-cache'
         }
       });
       if (!res.ok) return;
