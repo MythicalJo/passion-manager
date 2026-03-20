@@ -1,5 +1,6 @@
 import React, { useRef } from 'react';
-import { Download, Upload, Trash2, Globe, ShieldAlert } from 'lucide-react';
+import { Download, Upload, Trash2, Globe, ShieldAlert, Cloud } from 'lucide-react';
+import { saveFirebaseConfig, clearFirebaseConfig, getFirebaseConfig, initFirebase } from '../lib/firebase';
 import { Member, AttendanceRecord } from '../types';
 import { Language, translations } from '../translations';
 import { motion } from 'motion/react';
@@ -25,6 +26,31 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showConfirmClear, setShowConfirmClear] = React.useState(false);
   const [importStatus, setImportStatus] = React.useState<'idle' | 'success' | 'error'>('idle');
+  const [firebaseConfig, setFirebaseConfig] = React.useState('');
+  const [isConnected, setIsConnected] = React.useState(!!getFirebaseConfig());
+  const [configError, setConfigError] = React.useState(false);
+
+  const handleConnectCloud = () => {
+    if (saveFirebaseConfig(firebaseConfig)) {
+      if (initFirebase()) {
+        setIsConnected(true);
+        setConfigError(false);
+        window.location.reload();
+      } else {
+        setConfigError(true);
+        clearFirebaseConfig();
+      }
+    } else {
+      setConfigError(true);
+    }
+  };
+
+  const handleDisconnectCloud = () => {
+    clearFirebaseConfig();
+    setIsConnected(false);
+    setFirebaseConfig('');
+    window.location.reload();
+  };
 
   const handleExport = () => {
     const data = {
@@ -148,6 +174,53 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               {t.spanish}
             </button>
           </div>
+        </div>
+
+        {/* Cloud Sync Section */}
+        <div className="bg-white rounded-[1.5rem] md:rounded-[2.5rem] p-5 md:p-8 border border-slate-100 shadow-sm relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-6 md:p-8">
+            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${isConnected ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-500'}`}>
+              <div className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-emerald-500' : 'bg-slate-400'}`}></div>
+              {isConnected ? t.cloudConnected : t.cloudDisconnected}
+            </span>
+          </div>
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 bg-blue-50 rounded-xl">
+              <Cloud className="w-4 h-4 md:w-5 md:h-5 text-blue-600" />
+            </div>
+            <h3 className="text-base md:text-lg font-bold text-slate-800">{t.cloudSync}</h3>
+          </div>
+          <p className="text-slate-500 text-sm mb-6 max-w-md">{t.cloudSyncDesc}</p>
+          
+          {isConnected ? (
+            <button
+              onClick={handleDisconnectCloud}
+              className="py-3 md:py-4 px-4 md:px-6 rounded-xl md:rounded-2xl bg-rose-50 text-rose-600 font-bold hover:bg-rose-100 transition-all text-sm md:text-base border border-rose-200"
+            >
+              {t.disconnect}
+            </button>
+          ) : (
+            <div className="flex flex-col gap-3">
+              <textarea
+                value={firebaseConfig}
+                onChange={(e) => {
+                  setFirebaseConfig(e.target.value);
+                  setConfigError(false);
+                }}
+                placeholder={`{\n  "apiKey": "...",\n  "authDomain": "...",\n  "projectId": "...",\n  ...\n}`}
+                className={`w-full h-32 p-4 text-sm font-mono bg-slate-50 rounded-xl border-2 transition-colors resize-none placeholder-slate-300 focus:outline-none focus:bg-white ${
+                  configError ? 'border-rose-300 text-rose-900 focus:border-rose-500' : 'border-slate-100 text-slate-700 focus:border-blue-500'
+                }`}
+              />
+              {configError && <p className="text-rose-500 text-xs font-bold px-1">{t.invalidConfig}</p>}
+              <button
+                onClick={handleConnectCloud}
+                className="py-3 md:py-4 px-4 md:px-6 rounded-xl md:rounded-2xl bg-blue-600 text-white font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 text-sm md:text-base self-start"
+              >
+                {t.connect}
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Data Management Section */}

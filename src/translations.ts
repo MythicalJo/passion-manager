@@ -75,6 +75,14 @@ export const translations = {
     evangelizedStats: 'Evangelized Members',
     attendGps: 'attend a GPS',
     areEvangelized: 'are evangelized',
+    cloudSync: 'Cloud Sync',
+    cloudSyncDesc: 'Connect a Firebase database to sync data across all your devices in real time.',
+    firebaseConfigStr: 'Firebase Config (JSON)',
+    connect: 'Connect',
+    disconnect: 'Disconnect',
+    cloudConnected: 'Connected to Cloud',
+    cloudDisconnected: 'Disconnected',
+    invalidConfig: 'Invalid Firebase Config',
   },
   es: {
     attendance: 'Asistencia',
@@ -150,5 +158,13 @@ export const translations = {
     evangelizedStats: 'Miembros Evangelizados',
     attendGps: 'asisten a un GPS',
     areEvangelized: 'están evangelizados',
+    cloudSync: 'Sincronización en la Nube',
+    cloudSyncDesc: 'Conecta una base de datos Firebase para sincronizar datos en todos tus dispositivos en tiempo real.',
+    firebaseConfigStr: 'Configuración Firebase (JSON)',
+    connect: 'Conectar',
+    disconnect: 'Desconectar',
+    cloudConnected: 'Conectado a la Nube',
+    cloudDisconnected: 'Desconectado',
+    invalidConfig: 'Configuración de Firebase Inválida',
   }
 };

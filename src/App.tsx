@@ -9,6 +9,7 @@ import { SettingsView } from './components/SettingsView';
 import { Language, translations } from './translations';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from './lib/utils';
+import { syncToCloud, listenToCloud, SyncData } from './lib/firebase';
 
 export default function App() {
   const [view, setView] = useState<ViewMode>('attendance');
@@ -29,14 +30,32 @@ export default function App() {
     if (savedLanguage) setLanguage(savedLanguage as Language);
   }, []);
 
-  // Save data to localStorage
+  const isCloudUpdate = React.useRef(false);
+
+  // Listen to Cloud Updates
+  useEffect(() => {
+    const unsubscribe = listenToCloud((data: SyncData) => {
+      isCloudUpdate.current = true;
+      if (data.members) setMembers(data.members);
+      if (data.attendanceRecords) setAttendanceRecords(data.attendanceRecords);
+      // Reset the flag after React processes the state update
+      setTimeout(() => { isCloudUpdate.current = false; }, 500);
+    });
+
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, []);
+
+  // Save data to localStorage and Cloud
   useEffect(() => {
     localStorage.setItem('yg_members', JSON.stringify(members));
-  }, [members]);
-
-  useEffect(() => {
     localStorage.setItem('yg_attendance', JSON.stringify(attendanceRecords));
-  }, [attendanceRecords]);
+    
+    if (!isCloudUpdate.current && (members.length > 0 || attendanceRecords.length > 0)) {
+      syncToCloud({ members, attendanceRecords, updatedAt: new Date().toISOString() });
+    }
+  }, [members, attendanceRecords]);
 
   useEffect(() => {
     localStorage.setItem('yg_language', language);
