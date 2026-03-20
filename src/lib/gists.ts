@@ -119,14 +119,32 @@ export const listenToCloud = (onDataUpdate: (data: SyncData) => void): (() => vo
       if (!res.ok) return;
       const data = await res.json();
       const updated_at = data.updated_at;
-      
-      // If the gist was updated remotely
       if (updated_at > lastSyncDate) {
+        // Must update lastSyncDate before complex async logic to avoid re-triggering on same poll
         lastSyncDate = updated_at;
-        const fileContent = data.files['passion_manager_sync.json']?.content;
-        if (fileContent) {
-            const parsed = JSON.parse(fileContent) as SyncData;
-            onDataUpdate(parsed);
+        
+        const fileObj = data.files['passion_manager_sync.json'];
+        if (fileObj) {
+            let fileContent = fileObj.content;
+            
+            // GitHub truncates gist contents if they exceed a certain size
+            if (fileObj.truncated && fileObj.raw_url) {
+                try {
+                    const rawRes = await fetch(fileObj.raw_url);
+                    fileContent = await rawRes.text();
+                } catch (e) {
+                    console.error("Failed to fetch raw gist content", e);
+                }
+            }
+            
+            if (fileContent) {
+                try {
+                  const parsed = JSON.parse(fileContent) as SyncData;
+                  onDataUpdate(parsed);
+                } catch(e) {
+                  console.error("Failed to parse SyncData JSON", e);
+                }
+            }
         }
       }
     } catch (error) {
