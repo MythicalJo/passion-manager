@@ -88,12 +88,13 @@ export const MemberList: React.FC<MemberListProps> = ({ members, onAddMember, on
 
   const filteredAndSortedMembers = useMemo(() => {
     const query = searchQuery.toLowerCase().trim();
-    const filtered = members.filter(m => 
-      (showArchived ? !!m.isArchived : !m.isArchived) &&
-      (m.name.toLowerCase().includes(query) ||
-      (m.phone && m.phone.includes(query)) ||
-      (m.gpsName && m.gpsName.toLowerCase().includes(query)))
-    );
+    const filtered = members.filter(m => {
+      const matchesArchive = showArchived ? m.isArchived === true : !m.isArchived;
+      if (!matchesArchive) return false;
+      return m.name.toLowerCase().includes(query) ||
+        (m.phone && m.phone.includes(query)) ||
+        (m.gpsName && m.gpsName.toLowerCase().includes(query));
+    });
 
     return [...filtered].sort((a, b) => a.name.localeCompare(b.name));
   }, [members, searchQuery]);
@@ -338,7 +339,7 @@ export const MemberList: React.FC<MemberListProps> = ({ members, onAddMember, on
               />
             </div>
             
-            <div className="flex items-center justify-end gap-2 overflow-x-auto no-scrollbar shrink-0 w-full sm:w-auto mt-2 sm:mt-0 pb-1 sm:pb-0">
+            <div className="flex flex-wrap items-center justify-end gap-2 shrink-0 w-full sm:w-auto mt-2 sm:mt-0">
               <button
                 onClick={() => { setShowArchived(!showArchived); setIsBatchMode(false); setSelectedIds(new Set()); }}
                 className={`flex items-center justify-center p-2 sm:px-3 sm:py-2 rounded-xl border transition-all ${showArchived ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'}`}
@@ -364,7 +365,7 @@ export const MemberList: React.FC<MemberListProps> = ({ members, onAddMember, on
                   title={t.newMember}
                 >
                   <UserPlus className="w-5 h-5 sm:w-4 sm:h-4" />
-                  <span className="hidden sm:inline text-sm whitespace-nowrap">{t.newMember}</span>
+                  <span className="hidden sm:inline font-bold text-sm whitespace-nowrap">{t.newMember}</span>
                 </button>
               )}
             </div>
@@ -821,7 +822,7 @@ export const MemberList: React.FC<MemberListProps> = ({ members, onAddMember, on
             initial={{ y: 100 }}
             animate={{ y: 0 }}
             exit={{ y: 100 }}
-            className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-3 sm:px-6 py-3 sm:py-4 rounded-full shadow-2xl flex items-center gap-3 sm:gap-6 z-50 whitespace-nowrap w-[90%] sm:w-auto max-w-sm justify-between"
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-3 sm:px-6 py-3 sm:py-4 rounded-full shadow-2xl flex items-center gap-3 sm:gap-6 z-50 whitespace-nowrap w-[90%] sm:w-auto max-w-sm justify-between touch-none"
           >
             <span className="font-bold text-sm sm:text-base">{selectedIds.size} selected</span>
             <div className="flex items-center gap-2">
