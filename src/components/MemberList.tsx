@@ -327,8 +327,9 @@ export const MemberList: React.FC<MemberListProps> = ({ members, onAddMember, on
       <div className="mb-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
           <h2 className="text-2xl font-bold text-slate-800">{t.members}</h2>
-          <div className="flex items-center gap-2">
-            <div className="relative flex-1 sm:w-64">
+          
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
+            <div className="relative w-full sm:w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <input
                 type="text"
@@ -339,10 +340,10 @@ export const MemberList: React.FC<MemberListProps> = ({ members, onAddMember, on
               />
             </div>
             
-            <div className="flex flex-wrap items-center justify-end gap-2 shrink-0 w-full sm:w-auto mt-2 sm:mt-0">
+            <div className="flex items-center justify-between gap-2 shrink-0 w-full sm:w-auto">
               <button
                 onClick={() => { setShowArchived(!showArchived); setIsBatchMode(false); setSelectedIds(new Set()); }}
-                className={`flex items-center justify-center p-2 sm:px-3 sm:py-2 rounded-xl border transition-all ${showArchived ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'}`}
+                className={`flex-1 sm:flex-none flex items-center justify-center py-2.5 px-3 sm:py-2 rounded-xl border transition-all ${showArchived ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'}`}
                 title={showArchived ? t.hideArchived : t.showArchived}
               >
                 {showArchived ? <ArchiveRestore className="w-5 h-5 sm:w-4 sm:h-4" /> : <Archive className="w-5 h-5 sm:w-4 sm:h-4" />}
@@ -351,17 +352,17 @@ export const MemberList: React.FC<MemberListProps> = ({ members, onAddMember, on
               
               <button
                 onClick={() => { setIsBatchMode(!isBatchMode); setSelectedIds(new Set()); }}
-                className={`flex items-center justify-center p-2 sm:px-3 sm:py-2 rounded-xl border transition-all ${isBatchMode ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'}`}
+                className={`flex-1 sm:flex-none flex items-center justify-center py-2.5 px-3 sm:py-2 rounded-xl border transition-all ${isBatchMode ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'}`}
                 title={t.batchArchive}
               >
                 <CheckCircle2 className="w-5 h-5 sm:w-4 sm:h-4" />
                 <span className="hidden sm:inline ml-2 font-bold text-sm text-nowrap">{t.batchArchive}</span>
               </button>
 
-              {!isAdding && !editingId && !isBatchMode && (
+              {!isAdding && !editingId && (
                 <button
-                  onClick={() => setIsAdding(true)}
-                  className="bg-indigo-600 text-white p-2 sm:px-4 sm:py-2 rounded-xl hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2 font-medium shrink-0 ml-auto sm:ml-0"
+                  onClick={() => { setIsAdding(true); setIsBatchMode(false); }}
+                  className="flex-1 sm:flex-none bg-indigo-600 text-white py-2.5 px-3 sm:px-4 sm:py-2 rounded-xl hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2 font-medium shrink-0"
                   title={t.newMember}
                 >
                   <UserPlus className="w-5 h-5 sm:w-4 sm:h-4" />
@@ -819,10 +820,10 @@ export const MemberList: React.FC<MemberListProps> = ({ members, onAddMember, on
       <AnimatePresence>
         {isBatchMode && (
           <motion.div
-            initial={{ y: 100 }}
+            initial={{ y: 150 }}
             animate={{ y: 0 }}
-            exit={{ y: 100 }}
-            className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-3 sm:px-6 py-3 sm:py-4 rounded-full shadow-2xl flex items-center gap-3 sm:gap-6 z-50 whitespace-nowrap w-[90%] sm:w-auto max-w-sm justify-between touch-none"
+            exit={{ y: 150 }}
+            className="fixed bottom-10 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-3 sm:px-6 py-4 rounded-full shadow-2xl flex items-center justify-between gap-3 sm:gap-6 z-[150] whitespace-nowrap w-[90%] sm:w-auto max-w-sm"
           >
             <span className="font-bold text-sm sm:text-base">{selectedIds.size} selected</span>
             <div className="flex items-center gap-2">
