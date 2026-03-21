@@ -97,7 +97,7 @@ export const MemberList: React.FC<MemberListProps> = ({ members, onAddMember, on
     });
 
     return [...filtered].sort((a, b) => a.name.localeCompare(b.name));
-  }, [members, searchQuery]);
+  }, [members, searchQuery, showArchived]);
 
   const groupedMembers = useMemo(() => {
     const groups: { [key: string]: Member[] } = {};
