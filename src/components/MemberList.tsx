@@ -35,6 +35,7 @@ export const MemberList: React.FC<MemberListProps> = ({ members, onAddMember, on
   const [editingId, setEditingId] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [memberToDelete, setMemberToDelete] = useState<string | null>(null);
+  const [memberToArchive, setMemberToArchive] = useState<Member | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   
   // Archive & Batch Mode States
@@ -284,6 +285,44 @@ export const MemberList: React.FC<MemberListProps> = ({ members, onAddMember, on
         )}
       </AnimatePresence>
 
+      <AnimatePresence>
+        {memberToArchive && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-[2rem] p-8 max-w-sm w-full shadow-2xl border border-slate-100"
+            >
+              <div className="w-16 h-16 bg-amber-50 rounded-2xl flex items-center justify-center mb-6 mx-auto">
+                {showArchived ? <ArchiveRestore className="w-8 h-8 text-amber-500" /> : <Archive className="w-8 h-8 text-amber-500" />}
+              </div>
+              <h3 className="text-xl font-black text-slate-800 text-center mb-2">{showArchived ? t.unarchive : t.archive}</h3>
+              <p className="text-slate-500 text-center mb-8 leading-relaxed">
+                {showArchived ? t.confirmRestore : t.confirmArchive}
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setMemberToArchive(null)}
+                  className="flex-1 px-6 py-3 rounded-xl border border-slate-200 text-slate-600 font-bold hover:bg-slate-50 transition-colors"
+                >
+                  {t.cancel}
+                </button>
+                <button
+                  onClick={() => {
+                    onUpdateMember({ ...memberToArchive, isArchived: !showArchived });
+                    setMemberToArchive(null);
+                  }}
+                  className="flex-1 px-6 py-3 rounded-xl bg-amber-500 text-white font-bold hover:bg-amber-600 transition-colors shadow-lg shadow-amber-100"
+                >
+                  {showArchived ? t.unarchive : t.archive}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       <div className="mb-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
           <h2 className="text-2xl font-bold text-slate-800">{t.members}</h2>
@@ -299,26 +338,33 @@ export const MemberList: React.FC<MemberListProps> = ({ members, onAddMember, on
               />
             </div>
             
-            <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full sm:w-auto mt-2 sm:mt-0 pb-1 sm:pb-0">
+            <div className="flex items-center justify-end gap-2 overflow-x-auto no-scrollbar shrink-0 w-full sm:w-auto mt-2 sm:mt-0 pb-1 sm:pb-0">
               <button
                 onClick={() => { setShowArchived(!showArchived); setIsBatchMode(false); setSelectedIds(new Set()); }}
-                className={`flex-1 sm:flex-none flex justify-center items-center px-3 py-2 rounded-xl border text-xs sm:text-sm font-bold transition-all whitespace-nowrap ${showArchived ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'}`}
+                className={`flex items-center justify-center p-2 sm:px-3 sm:py-2 rounded-xl border transition-all ${showArchived ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'}`}
+                title={showArchived ? t.hideArchived : t.showArchived}
               >
-                {t.showArchived}
+                {showArchived ? <ArchiveRestore className="w-5 h-5 sm:w-4 sm:h-4" /> : <Archive className="w-5 h-5 sm:w-4 sm:h-4" />}
+                <span className="hidden sm:inline ml-2 font-bold text-sm text-nowrap">{showArchived ? t.hideArchived : t.showArchived}</span>
               </button>
+              
               <button
                 onClick={() => { setIsBatchMode(!isBatchMode); setSelectedIds(new Set()); }}
-                className={`flex-1 sm:flex-none flex justify-center items-center px-3 py-2 rounded-xl border text-xs sm:text-sm font-bold transition-all whitespace-nowrap ${isBatchMode ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'}`}
+                className={`flex items-center justify-center p-2 sm:px-3 sm:py-2 rounded-xl border transition-all ${isBatchMode ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'}`}
+                title={t.batchArchive}
               >
-                {t.batchArchive}
+                <CheckCircle2 className="w-5 h-5 sm:w-4 sm:h-4" />
+                <span className="hidden sm:inline ml-2 font-bold text-sm text-nowrap">{t.batchArchive}</span>
               </button>
+
               {!isAdding && !editingId && !isBatchMode && (
                 <button
                   onClick={() => setIsAdding(true)}
-                  className="w-full sm:w-auto bg-indigo-600 text-white px-4 py-2 rounded-xl hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2 font-medium shrink-0 mt-2 sm:mt-0"
+                  className="bg-indigo-600 text-white p-2 sm:px-4 sm:py-2 rounded-xl hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2 font-medium shrink-0 ml-auto sm:ml-0"
+                  title={t.newMember}
                 >
-                  <UserPlus className="w-4 h-4" />
-                  <span>{t.newMember}</span>
+                  <UserPlus className="w-5 h-5 sm:w-4 sm:h-4" />
+                  <span className="hidden sm:inline text-sm whitespace-nowrap">{t.newMember}</span>
                 </button>
               )}
             </div>
@@ -622,7 +668,7 @@ export const MemberList: React.FC<MemberListProps> = ({ members, onAddMember, on
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    onUpdateMember({ ...member, isArchived: !showArchived });
+                                    setMemberToArchive(member);
                                   }}
                                   className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-slate-100 rounded-xl transition-all"
                                   title={showArchived ? t.unarchive : t.archive}

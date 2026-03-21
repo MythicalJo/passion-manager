@@ -94,6 +94,9 @@ export const translations = {
     cancelBatch: 'Cancel Selection',
     selectToArchive: 'Select to Archive',
     showArchived: 'Show Archived Members',
+    hideArchived: 'Show Active Members',
+    confirmArchive: 'Are you sure you want to archive this member? They will be removed from the active list.',
+    confirmRestore: 'Are you sure you want to restore this member to the active list?',
   },
   es: {
     attendance: 'Asistencia',
@@ -188,5 +191,8 @@ export const translations = {
     cancelBatch: 'Cancelar selección',
     selectToArchive: 'Seleccionar para archivar',
     showArchived: 'Mostrar archivados',
+    hideArchived: 'Mostrar activos',
+    confirmArchive: '¿Estás seguro de que deseas archivar a este miembro? Será eliminado de la lista activa.',
+    confirmRestore: '¿Estás seguro de que deseas restaurar a este miembro a la lista activa?',
   }
 };

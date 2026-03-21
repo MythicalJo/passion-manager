@@ -17,16 +17,6 @@ const svgContent = `
   
   <!-- Cross -->
   <path d="M 230 180 L 230 90 L 280 90 L 280 180 L 370 180 L 370 230 L 280 230 L 280 420 L 230 420 L 230 230 L 140 230 L 140 180 Z" fill="#ffffff" />
-  
-  <!-- Little Dude (Circle Head + Curved Body) overlapping the cross -->
-  <g transform="translate(170, 260)">
-    <!-- Shadow -->
-    <circle cx="0" cy="0" r="40" fill="#1e1b4b" opacity="0.3" />
-    <path d="M -60 120 Q 0 40 60 120" fill="none" stroke="#1e1b4b" stroke-width="28" stroke-linecap="round" opacity="0.3" />
-    <!-- Body -->
-    <circle cx="0" cy="0" r="40" fill="#a5b4fc" />
-    <path d="M -60 120 Q 0 40 60 120" fill="none" stroke="#a5b4fc" stroke-width="28" stroke-linecap="round" />
-  </g>
 </svg>
 `;
 
