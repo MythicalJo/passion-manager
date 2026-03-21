@@ -1,51 +1,71 @@
 import sharp from 'sharp';
 import fs from 'fs';
 import path from 'path';
-import { fileURLToPath } from 'url';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const publicDir = path.join(__dirname, 'public');
-if (!fs.existsSync(publicDir)) {
-  fs.mkdirSync(publicDir);
-}
-
-// A simple SVG icon with the primary color (indigo-600) and a users/calendar metaphor
-const svgBuffer = Buffer.from(`
+const svgContent = `
 <svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
-  <rect width="512" height="512" rx="100" fill="#4f46e5"/>
-  <path d="M152 208C178.51 208 200 186.51 200 160C200 133.49 178.51 112 152 112C125.49 112 104 133.49 104 160C104 186.51 125.49 208 152 208Z" fill="white"/>
-  <path d="M152 232C118.423 232 50 248.832 50 282.413V336H254V282.413C254 248.832 185.577 232 152 232Z" fill="white"/>
-  <path d="M344 208C370.51 208 392 186.51 392 160C392 133.49 370.51 112 344 112C317.49 112 296 133.49 296 160C296 186.51 317.49 208 344 208Z" fill="white"/>
-  <path d="M344 232C314.162 232 262.115 245.548 255.08 273.719C260.675 277.525 264.407 282.593 266.386 288H438V282.413C438 248.832 377.577 232 344 232Z" fill="white"/>
-  <path d="M248 312C283.346 312 312 283.346 312 248C312 212.654 283.346 184 248 184C212.654 184 184 212.654 184 248C184 283.346 212.654 312 248 312Z" fill="white" opacity="0.9"/>
-  <path d="M248 344C200.413 344 104 367.832 104 415.413V456H392V415.413C392 367.832 295.587 344 248 344Z" fill="white" opacity="0.9"/>
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4f46e5" />
+      <stop offset="100%" stop-color="#312e81" />
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg)" />
+  
+  <!-- Cross Background Glow -->
+  <path d="M 230 180 L 230 90 L 280 90 L 280 180 L 370 180 L 370 230 L 280 230 L 280 420 L 230 420 L 230 230 L 140 230 L 140 180 Z" fill="#6366f1" opacity="0.5" filter="blur(8px)" />
+  
+  <!-- Cross -->
+  <path d="M 230 180 L 230 90 L 280 90 L 280 180 L 370 180 L 370 230 L 280 230 L 280 420 L 230 420 L 230 230 L 140 230 L 140 180 Z" fill="#ffffff" />
+  
+  <!-- Little Dude (Circle Head + Curved Body) overlapping the cross -->
+  <g transform="translate(170, 260)">
+    <!-- Shadow -->
+    <circle cx="0" cy="0" r="40" fill="#1e1b4b" opacity="0.3" />
+    <path d="M -60 120 Q 0 40 60 120" fill="none" stroke="#1e1b4b" stroke-width="28" stroke-linecap="round" opacity="0.3" />
+    <!-- Body -->
+    <circle cx="0" cy="0" r="40" fill="#a5b4fc" />
+    <path d="M -60 120 Q 0 40 60 120" fill="none" stroke="#a5b4fc" stroke-width="28" stroke-linecap="round" />
+  </g>
 </svg>
-`);
+`;
+
+const sizes = [192, 512];
 
 async function generateIcons() {
+  // Save temp SVG
+  const tempSvgPath = path.resolve('public', 'temp-icon.svg');
+  if (!fs.existsSync('public')) {
+    fs.mkdirSync('public');
+  }
+  fs.writeFileSync(tempSvgPath, svgContent);
+
   console.log('Generating icons...');
   
-  // 192x192 PWA Icon
-  await sharp(svgBuffer)
-    .resize(192, 192)
-    .toFile(path.join(publicDir, 'pwa-192x192.png'));
-  
-  // 512x512 PWA Icon
-  await sharp(svgBuffer)
-    .resize(512, 512)
-    .toFile(path.join(publicDir, 'pwa-512x512.png'));
-    
-  // 180x180 Apple Touch Icon
-  await sharp(svgBuffer)
+  for (const size of sizes) {
+    await sharp(tempSvgPath)
+      .resize(size, size)
+      .png()
+      .toFile(path.resolve('public', `pwa-${size}x${size}.png`));
+    console.log(`Generated pwa-${size}x${size}.png`);
+  }
+
+  // Generate apple touch icon (180x180)
+  await sharp(tempSvgPath)
     .resize(180, 180)
-    .toFile(path.join(publicDir, 'apple-touch-icon.png'));
+    .png()
+    .toFile(path.resolve('public', 'apple-touch-icon.png'));
+  console.log('Generated apple-touch-icon.png');
 
-  // Write base SVG just in case
-  fs.writeFileSync(path.join(publicDir, 'icon.svg'), svgBuffer);
-
-  console.log('Icons generated successfully in public/');
+  // Generate favicon
+  await sharp(tempSvgPath)
+    .resize(64, 64)
+    .png()
+    .toFile(path.resolve('public', 'favicon.png'));
+    
+  // Cleanup temp SVG
+  fs.unlinkSync(tempSvgPath);
+  console.log('Done!');
 }
 
 generateIcons().catch(console.error);

@@ -12,6 +12,7 @@ export interface Member {
   occupation?: 'none' | 'studying' | 'working' | 'both';
   occupationTime?: 'morning' | 'night' | 'both' | 'none';
   isEvangelized?: boolean;
+  isArchived?: boolean;
 }
 
 export interface AttendanceRecord {

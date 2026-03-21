@@ -33,14 +33,14 @@ export const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
   const filteredMembers = React.useMemo(() => {
     const query = searchQuery.toLowerCase().trim();
     return members
-      .filter(m => m.name.toLowerCase().includes(query))
+      .filter(m => !m.isArchived && m.name.toLowerCase().includes(query))
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [members, searchQuery]);
 
   const stats = {
-    total: members.length,
+    total: members.filter(m => !m.isArchived).length,
     present: presentIds.length,
-    absent: members.length - presentIds.length,
+    absent: members.filter(m => !m.isArchived).length - presentIds.length,
   };
 
   return (
@@ -80,7 +80,7 @@ export const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
 
       <div className="flex-1 overflow-y-auto pr-2">
         <div className="space-y-3">
-          {members.length === 0 ? (
+          {members.filter(m => !m.isArchived).length === 0 ? (
             <div className="text-center py-12 text-slate-400">
               <Users className="w-12 h-12 mx-auto mb-3 opacity-20" />
               <p>{t.addMembersPrompt}</p>

@@ -25,6 +25,13 @@ export const CommunityView: React.FC<CommunityViewProps> = ({ members, attendanc
   
   // Find members who haven't attended in the last 3 services
   const missingMembers = members.filter(member => {
+    // Exclude archived members
+    if (member.isArchived) return false;
+    
+    // Check if member has ANY attendance recorded ever
+    const hasAttendedEver = attendanceRecords.some(r => r.presentMemberIds.includes(member.id));
+    if (!hasAttendedEver) return false; // New members with 0 attendance aren't "missing"
+
     // If there are no services yet, they aren't "missing"
     if (lastThreeServices.length === 0) return false;
     
@@ -57,8 +64,9 @@ export const CommunityView: React.FC<CommunityViewProps> = ({ members, attendanc
   const activeLastMonth = getUniqueAttendees(lastMonthAttendance);
   const growth = activeThisMonth - activeLastMonth;
 
-  const gpsMembersCount = members.filter(m => m.isGpsMember).length;
-  const evangelizedMembersCount = members.filter(m => m.isEvangelized).length;
+  const gpsMembersCount = members.filter(m => m.isGpsMember && !m.isArchived).length;
+  const evangelizedMembersCount = members.filter(m => m.isEvangelized && !m.isArchived).length;
+  const totalActiveReach = members.filter(m => !m.isArchived).length;
 
   return (
     <div className="flex flex-col h-full space-y-8">
@@ -104,7 +112,7 @@ export const CommunityView: React.FC<CommunityViewProps> = ({ members, attendanc
             <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">{t.totalReach}</span>
           </div>
           <div>
-            <p className="text-5xl font-black text-slate-900 mb-1">{members.length}</p>
+            <p className="text-5xl font-black text-slate-900 mb-1">{totalActiveReach}</p>
             <p className="text-slate-400 text-sm font-medium">{t.registeredMembers}</p>
           </div>
         </div>
@@ -119,7 +127,7 @@ export const CommunityView: React.FC<CommunityViewProps> = ({ members, attendanc
           <div>
             <p className="text-xs font-black text-slate-300 uppercase tracking-widest mb-1">{t.gpsStats}</p>
             <p className="text-xl font-black text-slate-800">
-              {gpsMembersCount}/{members.length} <span className="text-xs font-medium text-slate-400 lowercase">{t.attendGps}</span>
+              {gpsMembersCount}/{totalActiveReach} <span className="text-xs font-medium text-slate-400 lowercase">{t.attendGps}</span>
             </p>
           </div>
         </div>
@@ -131,7 +139,7 @@ export const CommunityView: React.FC<CommunityViewProps> = ({ members, attendanc
           <div>
             <p className="text-xs font-black text-slate-300 uppercase tracking-widest mb-1">{t.evangelizedStats}</p>
             <p className="text-xl font-black text-slate-800">
-              {evangelizedMembersCount}/{members.length} <span className="text-xs font-medium text-slate-400 lowercase">{t.areEvangelized}</span>
+              {evangelizedMembersCount}/{totalActiveReach} <span className="text-xs font-medium text-slate-400 lowercase">{t.areEvangelized}</span>
             </p>
           </div>
         </div>

@@ -13,19 +13,20 @@ import {
   parseISO
 } from 'date-fns';
 import { enUS, es } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Gift } from 'lucide-react';
 import { cn } from '../lib/utils';
-import { Language } from '../translations';
-import { AttendanceRecord } from '../types';
+import { Language, translations } from '../translations';
+import { AttendanceRecord, Member } from '../types';
 
 interface CalendarProps {
   selectedDate: Date;
   onDateSelect: (date: Date) => void;
   language: Language;
   attendanceRecords: AttendanceRecord[];
+  members: Member[];
 }
 
-export const Calendar: React.FC<CalendarProps> = ({ selectedDate, onDateSelect, language, attendanceRecords }) => {
+export const Calendar: React.FC<CalendarProps> = ({ selectedDate, onDateSelect, language, attendanceRecords, members }) => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const locale = language === 'es' ? es : enUS;
 
@@ -52,6 +53,13 @@ export const Calendar: React.FC<CalendarProps> = ({ selectedDate, onDateSelect, 
   const weekDays = useMemo(() => language === 'es' 
     ? ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
     : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'], [language]);
+
+  const birthdayMembers = useMemo(() => members.filter(m => !m.isArchived && m.birthday), [members]);
+
+  const membersWithBirthdayToday = useMemo(() => {
+    const selectedDateStr = format(selectedDate, 'MM-dd');
+    return birthdayMembers.filter(m => m.birthday?.slice(5, 10) === selectedDateStr);
+  }, [birthdayMembers, selectedDate]);
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
@@ -89,19 +97,23 @@ export const Calendar: React.FC<CalendarProps> = ({ selectedDate, onDateSelect, 
           const isCurrentMonth = isSameMonth(day, monthStart);
           const dateStr = format(day, 'yyyy-MM-dd');
           const hasService = serviceDates.has(dateStr);
+          const hasBirthday = birthdayMembers.some(m => m.birthday?.slice(5, 10) === format(day, 'MM-dd'));
           
           return (
             <button
               key={idx}
               onClick={() => onDateSelect(day)}
               className={cn(
-                "h-10 w-full flex flex-col items-center justify-center rounded-lg text-sm transition-all relative",
+                "h-10 w-full flex flex-col items-center justify-center rounded-lg text-sm transition-all relative overflow-hidden",
                 !isCurrentMonth && "text-slate-300",
                 isCurrentMonth && !isSelected && "text-slate-600 hover:bg-slate-50",
                 isSelected && "bg-indigo-600 text-white font-semibold shadow-md shadow-indigo-100",
                 hasService && !isSelected && "bg-indigo-50 text-indigo-700 font-medium"
               )}
             >
+              <div className="absolute top-1 right-1 flex gap-0.5">
+                  {hasBirthday && <div className="w-1.5 h-1.5 rounded-full bg-rose-400 shadow-sm" />}
+              </div>
               <span>{format(day, 'd')}</span>
               {hasService && (
                 <div className={cn(
@@ -113,6 +125,22 @@ export const Calendar: React.FC<CalendarProps> = ({ selectedDate, onDateSelect, 
           );
         })}
       </div>
+
+      {membersWithBirthdayToday.length > 0 && (
+        <div className="mt-4 p-3 bg-rose-50 rounded-xl border border-rose-100">
+           <p className="text-xs font-bold text-rose-600 mb-1 flex items-center gap-1">
+             <Gift className="w-3 h-3" /> 
+             {language === 'es' ? 'Cumpleaños en este día' : 'Birthdays on this date'}
+           </p>
+           <div className="flex flex-wrap gap-2">
+             {membersWithBirthdayToday.map(m => (
+               <span key={m.id} className="text-sm font-medium text-rose-800 bg-white px-2 py-0.5 rounded-lg border border-rose-100">
+                 {m.name}
+               </span>
+             ))}
+           </div>
+        </div>
+      )}
     </div>
   );
 };

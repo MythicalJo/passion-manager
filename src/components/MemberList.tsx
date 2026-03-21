@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef } from 'react';
-import { UserPlus, Trash2, User, Edit2, X, Check, Calendar as CalendarIcon, Heart, MapPin, Utensils, Phone, Compass, ChevronDown, Search, CheckCircle2 } from 'lucide-react';
+import { UserPlus, Trash2, User, Edit2, X, Check, Calendar as CalendarIcon, Heart, MapPin, Utensils, Phone, Compass, ChevronDown, Search, CheckCircle2, Archive, ArchiveRestore } from 'lucide-react';
 import { Member } from '../types';
 import { Language, translations } from '../translations';
 import { motion, AnimatePresence } from 'motion/react';
@@ -35,6 +35,12 @@ export const MemberList: React.FC<MemberListProps> = ({ members, onAddMember, on
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [memberToDelete, setMemberToDelete] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // Archive & Batch Mode States
+  const [showArchived, setShowArchived] = useState(false);
+  const [isBatchMode, setIsBatchMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -81,9 +87,10 @@ export const MemberList: React.FC<MemberListProps> = ({ members, onAddMember, on
   const filteredAndSortedMembers = useMemo(() => {
     const query = searchQuery.toLowerCase().trim();
     const filtered = members.filter(m => 
-      m.name.toLowerCase().includes(query) ||
+      (showArchived ? !!m.isArchived : !m.isArchived) &&
+      (m.name.toLowerCase().includes(query) ||
       (m.phone && m.phone.includes(query)) ||
-      (m.gpsName && m.gpsName.toLowerCase().includes(query))
+      (m.gpsName && m.gpsName.toLowerCase().includes(query)))
     );
 
     return [...filtered].sort((a, b) => a.name.localeCompare(b.name));
@@ -146,6 +153,7 @@ export const MemberList: React.FC<MemberListProps> = ({ members, onAddMember, on
           occupation: formData.occupation,
           occupationTime: formData.occupation !== 'none' ? formData.occupationTime : 'none',
           isEvangelized: formData.isEvangelized,
+          isArchived: false,
         });
         setIsAdding(false);
       }
@@ -193,7 +201,32 @@ export const MemberList: React.FC<MemberListProps> = ({ members, onAddMember, on
     if (memberToDelete) {
       onDeleteMember(memberToDelete);
       setMemberToDelete(null);
+      // Remove from selection if deleted
+      if (selectedIds.has(memberToDelete)) {
+        const next = new Set(selectedIds);
+        next.delete(memberToDelete);
+        setSelectedIds(next);
+      }
     }
+  };
+
+  const toggleSelection = (id: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    const next = new Set(selectedIds);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    setSelectedIds(next);
+  };
+
+  const handleBatchArchiveToggle = () => {
+    selectedIds.forEach(id => {
+      const member = members.find(m => m.id === id);
+      if (member) {
+        onUpdateMember({ ...member, isArchived: !showArchived });
+      }
+    });
+    setIsBatchMode(false);
+    setSelectedIds(new Set());
   };
 
   const cancel = () => {
@@ -265,15 +298,30 @@ export const MemberList: React.FC<MemberListProps> = ({ members, onAddMember, on
                 className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all bg-white text-sm"
               />
             </div>
-            {!isAdding && !editingId && (
+            
+            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar shrink-0 pb-1 sm:pb-0">
               <button
-                onClick={() => setIsAdding(true)}
-                className="bg-indigo-600 text-white px-4 py-2 rounded-xl hover:bg-indigo-700 transition-colors flex items-center gap-2 font-medium shrink-0"
+                onClick={() => { setShowArchived(!showArchived); setIsBatchMode(false); setSelectedIds(new Set()); }}
+                className={`px-3 py-2 rounded-xl border text-sm font-bold transition-all whitespace-nowrap ${showArchived ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'}`}
               >
-                <UserPlus className="w-4 h-4" />
-                <span className="hidden sm:inline">{t.newMember}</span>
+                {t.showArchived}
               </button>
-            )}
+              <button
+                onClick={() => { setIsBatchMode(!isBatchMode); setSelectedIds(new Set()); }}
+                className={`px-3 py-2 rounded-xl border text-sm font-bold transition-all whitespace-nowrap ${isBatchMode ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'}`}
+              >
+                {t.batchArchive}
+              </button>
+              {!isAdding && !editingId && !isBatchMode && (
+                <button
+                  onClick={() => setIsAdding(true)}
+                  className="bg-indigo-600 text-white px-4 py-2 rounded-xl hover:bg-indigo-700 transition-colors flex items-center gap-2 font-medium shrink-0"
+                >
+                  <UserPlus className="w-4 h-4" />
+                  <span className="hidden sm:inline">{t.newMember}</span>
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
@@ -518,7 +566,9 @@ export const MemberList: React.FC<MemberListProps> = ({ members, onAddMember, on
                   <div className="space-y-3">
                     {groupedMembers[letter].map((member) => {
                       const age = calculateAge(member.birthday);
-                      const isExpanded = expandedId === member.id;
+                      const isExpanded = expandedId === member.id && !isBatchMode;
+                      const isSelected = selectedIds.has(member.id);
+                      
                       return (
                         <motion.div
                           key={member.id}
@@ -526,11 +576,16 @@ export const MemberList: React.FC<MemberListProps> = ({ members, onAddMember, on
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, scale: 0.95 }}
-                          onClick={() => toggleExpand(member.id)}
-                          className={`group bg-white rounded-2xl border transition-all cursor-pointer overflow-hidden ${isExpanded ? 'p-6 border-indigo-200 shadow-lg ring-1 ring-indigo-500/5' : 'p-3 border-slate-100 shadow-sm hover:border-indigo-100 hover:shadow-md'}`}
+                          onClick={() => isBatchMode ? toggleSelection(member.id) : toggleExpand(member.id)}
+                          className={`group bg-white rounded-2xl border transition-all cursor-pointer overflow-hidden ${isExpanded ? 'p-6 border-indigo-200 shadow-lg ring-1 ring-indigo-500/5' : 'p-3 border-slate-100 shadow-sm hover:border-indigo-100 hover:shadow-md'} ${isSelected ? 'ring-2 ring-indigo-500 border-indigo-500 bg-indigo-50/30' : ''}`}
                         >
-                          <div className="flex items-center justify-between">
+                          <div className="flex items-center justify-between pointer-events-none">
                             <div className="flex items-center gap-4">
+                              {isBatchMode && (
+                                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors shrink-0 ${isSelected ? 'bg-indigo-600 border-indigo-600' : 'border-slate-300'}`}>
+                                  {isSelected && <Check className="w-4 h-4 text-white" />}
+                                </div>
+                              )}
                               <div className={`rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600 font-bold shadow-inner transition-all ${isExpanded ? 'w-14 h-14 text-xl' : 'w-10 h-10 text-base'}`}>
                                 {member.name.charAt(0).toUpperCase()}
                               </div>
@@ -562,25 +617,37 @@ export const MemberList: React.FC<MemberListProps> = ({ members, onAddMember, on
                               </div>
                             </div>
                             
-                            <div className="flex items-center gap-1">
-                              <button
-                                onClick={(e) => startEdit(e, member)}
-                                className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"
-                                title={t.edit}
-                              >
-                                <Edit2 className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={(e) => handleDelete(e, member.id)}
-                                className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
-                                title={t.delete}
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                              <div className={`p-1 text-slate-300 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`}>
-                                <ChevronDown className="w-4 h-4" />
+                            {!isBatchMode && (
+                              <div className="flex items-center gap-1 pointer-events-auto">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onUpdateMember({ ...member, isArchived: !showArchived });
+                                  }}
+                                  className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-slate-100 rounded-xl transition-all"
+                                  title={showArchived ? t.unarchive : t.archive}
+                                >
+                                  {showArchived ? <ArchiveRestore className="w-4 h-4" /> : <Archive className="w-4 h-4" />}
+                                </button>
+                                <button
+                                  onClick={(e) => startEdit(e, member)}
+                                  className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"
+                                  title={t.edit}
+                                >
+                                  <Edit2 className="w-4 h-4" />
+                                </button>
+                                <button
+                                  onClick={(e) => handleDelete(e, member.id)}
+                                  className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                                  title={t.delete}
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                                <div className={`p-1 text-slate-300 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`}>
+                                  <ChevronDown className="w-4 h-4" />
+                                </div>
                               </div>
-                            </div>
+                            )}
                           </div>
 
                           <AnimatePresence>
@@ -617,17 +684,17 @@ export const MemberList: React.FC<MemberListProps> = ({ members, onAddMember, on
                                         </div>
                                       </div>
                                     )}
-                                    {member.isGpsMember && member.gpsName && (
-                                      <div className="flex items-start gap-3">
-                                        <div className="w-8 h-8 rounded-xl bg-indigo-50 flex items-center justify-center shrink-0">
-                                          <Compass className="w-4 h-4 text-indigo-500" />
-                                        </div>
-                                        <div className="space-y-0.5">
-                                          <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">GPS</p>
-                                          <p className="text-sm text-slate-600 font-medium leading-tight">{member.gpsName}</p>
-                                        </div>
+                                    <div className="flex items-start gap-3">
+                                      <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${member.isGpsMember && member.gpsName ? 'bg-indigo-50' : 'bg-slate-50'}`}>
+                                        <Compass className={`w-4 h-4 ${member.isGpsMember && member.gpsName ? 'text-indigo-500' : 'text-slate-400'}`} />
                                       </div>
-                                    )}
+                                      <div className="space-y-0.5">
+                                        <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">GPS</p>
+                                        <p className={`text-sm font-medium leading-tight ${member.isGpsMember && member.gpsName ? 'text-slate-600' : 'text-slate-400'}`}>
+                                          {member.isGpsMember && member.gpsName ? member.gpsName : t.notInGps}
+                                        </p>
+                                      </div>
+                                    </div>
                                     {member.likes && (
                                       <div className="flex items-start gap-3">
                                         <div className="w-8 h-8 rounded-xl bg-rose-50 flex items-center justify-center shrink-0">
@@ -675,17 +742,17 @@ export const MemberList: React.FC<MemberListProps> = ({ members, onAddMember, on
                                         </div>
                                       </div>
                                     )}
-                                    {member.isEvangelized && (
-                                      <div className="flex items-start gap-3">
-                                        <div className="w-8 h-8 rounded-xl bg-emerald-50 flex items-center justify-center shrink-0">
-                                          <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                                        </div>
-                                        <div className="space-y-0.5">
-                                          <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">{t.evangelized}</p>
-                                          <p className="text-sm text-emerald-600 font-bold leading-tight">{t.evangelized}</p>
-                                        </div>
+                                    <div className="flex items-start gap-3">
+                                      <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${member.isEvangelized ? 'bg-emerald-50' : 'bg-slate-50'}`}>
+                                        <CheckCircle2 className={`w-4 h-4 ${member.isEvangelized ? 'text-emerald-500' : 'text-slate-400'}`} />
                                       </div>
-                                    )}
+                                      <div className="space-y-0.5">
+                                        <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">{t.evangelized}</p>
+                                        <p className={`text-sm font-bold leading-tight ${member.isEvangelized ? 'text-emerald-600' : 'text-slate-500'}`}>
+                                          {member.isEvangelized ? t.yes : t.no}
+                                        </p>
+                                      </div>
+                                    </div>
                                   </div>
                                 </div>
                               </motion.div>
@@ -700,9 +767,35 @@ export const MemberList: React.FC<MemberListProps> = ({ members, onAddMember, on
             )}
           </AnimatePresence>
         </div>
-
-
       </div>
+
+      <AnimatePresence>
+        {isBatchMode && (
+          <motion.div
+            initial={{ y: 100 }}
+            animate={{ y: 0 }}
+            exit={{ y: 100 }}
+            className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-3 sm:px-6 py-3 sm:py-4 rounded-full shadow-2xl flex items-center gap-3 sm:gap-6 z-50 whitespace-nowrap w-[90%] sm:w-auto max-w-sm justify-between"
+          >
+            <span className="font-bold text-sm sm:text-base">{selectedIds.size} selected</span>
+            <div className="flex items-center gap-2">
+              <button onClick={() => { setIsBatchMode(false); setSelectedIds(new Set()); }} className="px-3 sm:px-4 py-2 hover:bg-slate-800 rounded-full text-slate-300 transition-colors text-sm sm:text-base">
+                <X className="w-5 h-5 sm:hidden" />
+                <span className="hidden sm:inline">{t.cancel}</span>
+              </button>
+              <button 
+                disabled={selectedIds.size === 0}
+                onClick={handleBatchArchiveToggle}
+                className="px-4 sm:px-6 py-2 bg-indigo-500 hover:bg-indigo-400 disabled:bg-slate-700 disabled:text-slate-500 rounded-full font-bold transition-colors text-sm sm:text-base flex items-center gap-2"
+              >
+                {showArchived ? <ArchiveRestore className="w-4 h-4" /> : <Archive className="w-4 h-4" />}
+                <span className="hidden sm:inline">{showArchived ? t.unarchive : t.archive}</span>
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
     </div>
   );
 };
