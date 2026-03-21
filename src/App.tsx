@@ -193,6 +193,7 @@ export default function App() {
                   onDateSelect={setSelectedDate}
                   language={language}
                   attendanceRecords={attendanceRecords}
+                  members={members}
                 />
               </div>
             </motion.div>
