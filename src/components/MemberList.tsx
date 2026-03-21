@@ -23,11 +23,12 @@ interface MemberListProps {
     isEvangelized?: boolean;
   }) => void;
   onUpdateMember: (member: Member) => void;
+  onBatchUpdateMembers: (updates: Partial<Member>[]) => void;
   onDeleteMember: (id: string) => void;
   language: Language;
 }
 
-export const MemberList: React.FC<MemberListProps> = ({ members, onAddMember, onUpdateMember, onDeleteMember, language }) => {
+export const MemberList: React.FC<MemberListProps> = ({ members, onAddMember, onUpdateMember, onBatchUpdateMembers, onDeleteMember, language }) => {
   const t = translations[language];
   const locale = language === 'es' ? es : enUS;
   const [isAdding, setIsAdding] = useState(false);
@@ -219,12 +220,11 @@ export const MemberList: React.FC<MemberListProps> = ({ members, onAddMember, on
   };
 
   const handleBatchArchiveToggle = () => {
-    selectedIds.forEach(id => {
-      const member = members.find(m => m.id === id);
-      if (member) {
-        onUpdateMember({ ...member, isArchived: !showArchived });
-      }
-    });
+    const updates = Array.from(selectedIds).map(id => ({
+      id,
+      isArchived: !showArchived
+    }));
+    onBatchUpdateMembers(updates);
     setIsBatchMode(false);
     setSelectedIds(new Set());
   };
@@ -299,26 +299,26 @@ export const MemberList: React.FC<MemberListProps> = ({ members, onAddMember, on
               />
             </div>
             
-            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar shrink-0 pb-1 sm:pb-0">
+            <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full sm:w-auto mt-2 sm:mt-0 pb-1 sm:pb-0">
               <button
                 onClick={() => { setShowArchived(!showArchived); setIsBatchMode(false); setSelectedIds(new Set()); }}
-                className={`px-3 py-2 rounded-xl border text-sm font-bold transition-all whitespace-nowrap ${showArchived ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'}`}
+                className={`flex-1 sm:flex-none flex justify-center items-center px-3 py-2 rounded-xl border text-xs sm:text-sm font-bold transition-all whitespace-nowrap ${showArchived ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'}`}
               >
                 {t.showArchived}
               </button>
               <button
                 onClick={() => { setIsBatchMode(!isBatchMode); setSelectedIds(new Set()); }}
-                className={`px-3 py-2 rounded-xl border text-sm font-bold transition-all whitespace-nowrap ${isBatchMode ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'}`}
+                className={`flex-1 sm:flex-none flex justify-center items-center px-3 py-2 rounded-xl border text-xs sm:text-sm font-bold transition-all whitespace-nowrap ${isBatchMode ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'}`}
               >
                 {t.batchArchive}
               </button>
               {!isAdding && !editingId && !isBatchMode && (
                 <button
                   onClick={() => setIsAdding(true)}
-                  className="bg-indigo-600 text-white px-4 py-2 rounded-xl hover:bg-indigo-700 transition-colors flex items-center gap-2 font-medium shrink-0"
+                  className="w-full sm:w-auto bg-indigo-600 text-white px-4 py-2 rounded-xl hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2 font-medium shrink-0 mt-2 sm:mt-0"
                 >
                   <UserPlus className="w-4 h-4" />
-                  <span className="hidden sm:inline">{t.newMember}</span>
+                  <span>{t.newMember}</span>
                 </button>
               )}
             </div>

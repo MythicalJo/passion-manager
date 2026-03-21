@@ -90,6 +90,18 @@ export default function App() {
     pushToCloud(newMembers, attendanceRecords);
   };
 
+  const handleBatchUpdateMembers = (updates: Partial<Member>[]) => {
+    const newMembers = [...members];
+    updates.forEach(update => {
+      const index = newMembers.findIndex(m => m.id === update.id);
+      if (index !== -1) {
+        newMembers[index] = { ...newMembers[index], ...update };
+      }
+    });
+    setMembers(newMembers);
+    pushToCloud(newMembers, attendanceRecords);
+  };
+
   const handleDeleteMember = (id: string) => {
     const newMembers = members.filter((m) => m.id !== id);
     // Also clean up attendance records
@@ -228,6 +240,7 @@ export default function App() {
                   members={members}
                   onAddMember={handleAddMember}
                   onUpdateMember={handleUpdateMember}
+                  onBatchUpdateMembers={handleBatchUpdateMembers}
                   onDeleteMember={handleDeleteMember}
                   language={language}
                 />

@@ -94,6 +94,7 @@ export const Calendar: React.FC<CalendarProps> = ({ selectedDate, onDateSelect, 
       <div className="grid grid-cols-7 gap-1">
         {calendarDays.map((day, idx) => {
           const isSelected = isSameDay(day, selectedDate);
+          const isToday = isSameDay(day, new Date());
           const isCurrentMonth = isSameMonth(day, monthStart);
           const dateStr = format(day, 'yyyy-MM-dd');
           const hasService = serviceDates.has(dateStr);
@@ -108,6 +109,7 @@ export const Calendar: React.FC<CalendarProps> = ({ selectedDate, onDateSelect, 
                 !isCurrentMonth && "text-slate-300",
                 isCurrentMonth && !isSelected && "text-slate-600 hover:bg-slate-50",
                 isSelected && "bg-indigo-600 text-white font-semibold shadow-md shadow-indigo-100",
+                !isSelected && isToday && "ring-2 ring-inset ring-indigo-300 text-indigo-700 font-bold",
                 hasService && !isSelected && "bg-indigo-50 text-indigo-700 font-medium"
               )}
             >
