@@ -334,7 +334,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       </div>
       
       <div className="text-center mt-8 pb-4">
-        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Passion Manager v1.0.6</p>
+        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Passion Manager v1.0.7</p>
       </div>
     </div>
   );

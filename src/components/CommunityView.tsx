@@ -74,7 +74,15 @@ export const CommunityView: React.FC<CommunityViewProps> = ({ members, attendanc
     if (!expandedStat) return null;
 
     const title = expandedStat === 'gps' ? t.gpsStats : t.evangelizedStats;
-    const completedMembers = activeMembers.filter(m => expandedStat === 'gps' ? m.isGpsMember : m.isEvangelized);
+    const completedMembers = activeMembers
+      .filter(m => expandedStat === 'gps' ? m.isGpsMember : m.isEvangelized)
+      .sort((a, b) => {
+        if (expandedStat === 'gps') {
+          const mainCompare = (a.gpsName || '').localeCompare(b.gpsName || '');
+          if (mainCompare !== 0) return mainCompare;
+        }
+        return a.name.localeCompare(b.name);
+      });
     const missingMembersList = activeMembers.filter(m => expandedStat === 'gps' ? !m.isGpsMember : !m.isEvangelized);
 
     return (
