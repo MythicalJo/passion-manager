@@ -1,8 +1,8 @@
-import React from 'react';
-import { Users, TrendingUp, AlertCircle, Calendar, CheckCircle2, Compass } from 'lucide-react';
+import React, { useState } from 'react';
+import { Users, TrendingUp, AlertCircle, Calendar, CheckCircle2, Compass, X, XCircle } from 'lucide-react';
 import { Member, AttendanceRecord } from '../types';
 import { Language, translations } from '../translations';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { format, subMonths, startOfMonth, isAfter, parseISO } from 'date-fns';
 import { enUS, es } from 'date-fns/locale';
 import { cn } from '../lib/utils';
@@ -16,6 +16,7 @@ interface CommunityViewProps {
 export const CommunityView: React.FC<CommunityViewProps> = ({ members, attendanceRecords, language }) => {
   const t = translations[language];
   const locale = language === 'es' ? es : enUS;
+  const [expandedStat, setExpandedStat] = useState<'evangelism' | 'gps' | null>(null);
 
   // Sort records by date descending
   const sortedRecords = [...attendanceRecords].sort((a, b) => b.date.localeCompare(a.date));
@@ -66,10 +67,93 @@ export const CommunityView: React.FC<CommunityViewProps> = ({ members, attendanc
 
   const gpsMembersCount = members.filter(m => m.isGpsMember && !m.isArchived).length;
   const evangelizedMembersCount = members.filter(m => m.isEvangelized && !m.isArchived).length;
-  const totalActiveReach = members.filter(m => !m.isArchived).length;
+  const activeMembers = members.filter(m => !m.isArchived);
+  const totalActiveReach = activeMembers.length;
+
+  const renderStatModal = () => {
+    if (!expandedStat) return null;
+
+    const title = expandedStat === 'gps' ? t.gpsStats : t.evangelizedStats;
+    const completedMembers = activeMembers.filter(m => expandedStat === 'gps' ? m.isGpsMember : m.isEvangelized);
+    const missingMembersList = activeMembers.filter(m => expandedStat === 'gps' ? !m.isGpsMember : !m.isEvangelized);
+
+    return (
+      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.95 }}
+          className="bg-white rounded-[2rem] max-w-md w-full shadow-2xl border border-slate-100 flex flex-col max-h-[80vh] overflow-hidden"
+        >
+          <div className="p-6 border-b border-slate-100 flex items-center justify-between shrink-0 bg-slate-50">
+            <div className="flex items-center gap-3">
+              <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center", expandedStat === 'gps' ? "bg-indigo-100 text-indigo-600" : "bg-emerald-100 text-emerald-600")}>
+                {expandedStat === 'gps' ? <Compass className="w-5 h-5" /> : <CheckCircle2 className="w-5 h-5" />}
+              </div>
+              <h3 className="text-xl font-black text-slate-800">{title}</h3>
+            </div>
+            <button
+              onClick={() => setExpandedStat(null)}
+              className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-200 rounded-full transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+          
+          <div className="p-6 overflow-y-auto space-y-8 flex-1">
+            {/* Completed Section */}
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                <h4 className="text-sm font-bold text-slate-800 uppercase tracking-widest">{t.completed} ({completedMembers.length})</h4>
+              </div>
+              <div className="space-y-2">
+                {completedMembers.length === 0 ? (
+                  <p className="text-sm text-slate-400 italic">No members found.</p>
+                ) : (
+                  completedMembers.map(m => (
+                    <div key={m.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-emerald-50/50 rounded-xl border border-emerald-100/50 gap-1">
+                      <span className="font-bold text-slate-700">{m.name}</span>
+                      {expandedStat === 'gps' && m.gpsName && (
+                        <span className="text-xs font-semibold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-md max-w-full truncate">{m.gpsName}</span>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* Missing Section */}
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <XCircle className="w-5 h-5 text-rose-500" />
+                <h4 className="text-sm font-bold text-slate-800 uppercase tracking-widest">{t.missing} ({missingMembersList.length})</h4>
+              </div>
+              <div className="space-y-2">
+                {missingMembersList.length === 0 ? (
+                  <p className="text-sm text-slate-400 italic">No members found.</p>
+                ) : (
+                  missingMembersList.map(m => (
+                    <div key={m.id} className="font-medium text-slate-600 p-3 bg-rose-50/50 rounded-xl border border-rose-100/50 flex items-center justify-between">
+                      {m.name}
+                      <span className="text-[10px] font-bold text-rose-400 uppercase tracking-widest px-2">{t.atRisk}</span>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+    );
+  };
 
   return (
-    <div className="flex flex-col h-full space-y-8">
+    <div className="flex flex-col h-full space-y-8 relative">
+      <AnimatePresence>
+        {renderStatModal()}
+      </AnimatePresence>
+
       <div>
         <h2 className="text-3xl font-black text-slate-900 tracking-tight mb-2">{t.communityInsights}</h2>
         <p className="text-slate-500">{t.communityDesc}</p>
@@ -120,9 +204,12 @@ export const CommunityView: React.FC<CommunityViewProps> = ({ members, attendanc
 
       {/* GPS and Evangelization Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-        <div className="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center shrink-0">
-            <Compass className="w-6 h-6 text-indigo-500" />
+        <button 
+          onClick={() => setExpandedStat('gps')}
+          className="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sm flex items-center gap-4 hover:border-indigo-300 hover:shadow-md transition-all text-left outline-none group cursor-pointer"
+        >
+          <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center shrink-0 group-hover:bg-indigo-100 transition-colors">
+            <Compass className="w-6 h-6 text-indigo-500 group-hover:scale-110 transition-transform" />
           </div>
           <div>
             <p className="text-xs font-black text-slate-300 uppercase tracking-widest mb-1">{t.gpsStats}</p>
@@ -130,11 +217,14 @@ export const CommunityView: React.FC<CommunityViewProps> = ({ members, attendanc
               {gpsMembersCount}/{totalActiveReach} <span className="text-xs font-medium text-slate-400 lowercase">{t.attendGps}</span>
             </p>
           </div>
-        </div>
+        </button>
 
-        <div className="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center shrink-0">
-            <CheckCircle2 className="w-6 h-6 text-emerald-500" />
+        <button 
+          onClick={() => setExpandedStat('evangelism')}
+          className="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sm flex items-center gap-4 hover:border-emerald-300 hover:shadow-md transition-all text-left outline-none group cursor-pointer"
+        >
+          <div className="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center shrink-0 group-hover:bg-emerald-100 transition-colors">
+            <CheckCircle2 className="w-6 h-6 text-emerald-500 group-hover:scale-110 transition-transform" />
           </div>
           <div>
             <p className="text-xs font-black text-slate-300 uppercase tracking-widest mb-1">{t.evangelizedStats}</p>
@@ -142,7 +232,7 @@ export const CommunityView: React.FC<CommunityViewProps> = ({ members, attendanc
               {evangelizedMembersCount}/{totalActiveReach} <span className="text-xs font-medium text-slate-400 lowercase">{t.areEvangelized}</span>
             </p>
           </div>
-        </div>
+        </button>
       </div>
 
       {/* Missing Members Section */}

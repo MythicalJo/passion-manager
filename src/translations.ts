@@ -97,6 +97,9 @@ export const translations = {
     hideArchived: 'Show Active Members',
     confirmArchive: 'Are you sure you want to archive this member? They will be removed from the active list.',
     confirmRestore: 'Are you sure you want to restore this member to the active list?',
+    completed: 'Completed',
+    missing: 'Missing',
+    close: 'Close',
   },
   es: {
     attendance: 'Asistencia',
@@ -194,5 +197,8 @@ export const translations = {
     hideArchived: 'Mostrar activos',
     confirmArchive: '¿Estás seguro de que deseas archivar a este miembro? Será eliminado de la lista activa.',
     confirmRestore: '¿Estás seguro de que deseas restaurar a este miembro a la lista activa?',
+    completed: 'Completado',
+    missing: 'Faltante',
+    close: 'Cerrar',
   }
 };
