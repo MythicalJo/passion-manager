@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef } from 'react';
-import { UserPlus, Trash2, User, Edit2, X, Check, Calendar as CalendarIcon, Heart, MapPin, Utensils, Phone, Compass, ChevronDown, Search, CheckCircle2, Archive, ArchiveRestore } from 'lucide-react';
+import { UserPlus, Trash2, User, Edit2, X, Check, Calendar as CalendarIcon, Heart, MapPin, Utensils, Phone, Compass, ChevronDown, Search, CheckCircle2, Archive, ArchiveRestore, Shield } from 'lucide-react';
 import { Member } from '../types';
 import { Language, translations } from '../translations';
 import { motion, AnimatePresence } from 'motion/react';
@@ -693,7 +693,7 @@ export const MemberList: React.FC<MemberListProps> = ({ members, onAddMember, on
                                   <p className={`font-bold text-slate-800 transition-all ${isExpanded ? 'text-lg' : 'text-base'}`}>{member.name}</p>
                                   {member.isStaff && (
                                     <span className="px-2 py-0.5 rounded-md bg-purple-100 text-purple-700 text-[10px] font-black uppercase tracking-wider">
-                                      {t.staff}{member.ministry ? `: ${member.ministry}` : ''}
+                                      {t.staff}
                                     </span>
                                   )}
                                   {age !== null && (
@@ -799,6 +799,17 @@ export const MemberList: React.FC<MemberListProps> = ({ members, onAddMember, on
                                         </p>
                                       </div>
                                     </div>
+                                    {member.isStaff && member.ministry && (
+                                      <div className="flex items-start gap-3">
+                                        <div className="w-8 h-8 rounded-xl bg-purple-50 flex items-center justify-center shrink-0">
+                                          <Shield className="w-4 h-4 text-purple-500" />
+                                        </div>
+                                        <div className="space-y-0.5">
+                                          <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">{t.ministry}</p>
+                                          <p className="text-sm text-slate-600 font-medium leading-tight">{member.ministry}</p>
+                                        </div>
+                                      </div>
+                                    )}
                                     {member.likes && (
                                       <div className="flex items-start gap-3">
                                         <div className="w-8 h-8 rounded-xl bg-rose-50 flex items-center justify-center shrink-0">
