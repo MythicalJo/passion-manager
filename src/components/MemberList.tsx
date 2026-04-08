@@ -703,17 +703,17 @@ export const MemberList: React.FC<MemberListProps> = ({ members, onAddMember, on
                                   )}
                                 </div>
                                 {!isExpanded && (
-                                  <div className="flex items-center gap-3 text-[10px] text-slate-400">
+                                  <div className="flex items-center gap-3 text-[10px] text-slate-400 min-w-0">
                                     {member.phone && (
-                                      <div className="flex items-center gap-1">
-                                        <Phone className="w-2.5 h-2.5" />
+                                      <div className="flex items-center gap-1 shrink-0">
+                                        <Phone className="w-2.5 h-2.5 shrink-0" />
                                         {member.phone}
                                       </div>
                                     )}
                                     {member.isGpsMember && member.gpsName && (
-                                      <div className="flex items-center gap-1">
-                                        <Compass className="w-2.5 h-2.5" />
-                                        {member.gpsName}
+                                      <div className="flex items-center gap-1 min-w-0">
+                                        <Compass className="w-2.5 h-2.5 shrink-0" />
+                                        <span className="truncate">{member.gpsName}</span>
                                       </div>
                                     )}
                                   </div>
