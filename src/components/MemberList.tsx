@@ -678,8 +678,8 @@ export const MemberList: React.FC<MemberListProps> = ({ members, onAddMember, on
                           onClick={() => isBatchMode ? toggleSelection(member.id) : toggleExpand(member.id)}
                           className={`group bg-white rounded-2xl border transition-all cursor-pointer overflow-hidden ${isExpanded ? 'p-6 border-indigo-200 shadow-lg ring-1 ring-indigo-500/5' : 'p-3 border-slate-100 shadow-sm hover:border-indigo-100 hover:shadow-md'} ${isSelected ? 'ring-2 ring-indigo-500 border-indigo-500 bg-indigo-50/30' : ''}`}
                         >
-                          <div className="flex items-center justify-between pointer-events-none">
-                            <div className="flex items-center gap-4">
+                          <div className="flex items-start sm:items-center justify-between pointer-events-none w-full gap-2 min-w-0">
+                            <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
                               {isBatchMode && (
                                 <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors shrink-0 ${isSelected ? 'bg-indigo-600 border-indigo-600' : 'border-slate-300'}`}>
                                   {isSelected && <Check className="w-4 h-4 text-white" />}
@@ -688,16 +688,16 @@ export const MemberList: React.FC<MemberListProps> = ({ members, onAddMember, on
                               <div className={`rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600 font-bold shadow-inner transition-all ${isExpanded ? 'w-14 h-14 text-xl' : 'w-10 h-10 text-base'}`}>
                                 {member.name.charAt(0).toUpperCase()}
                               </div>
-                              <div className="space-y-0.5">
-                                <div className="flex items-center gap-2">
-                                  <p className={`font-bold text-slate-800 transition-all ${isExpanded ? 'text-lg' : 'text-base'}`}>{member.name}</p>
+                              <div className="space-y-0.5 flex-1 min-w-0">
+                                <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                                  <p className={`font-bold text-slate-800 transition-all truncate max-w-full ${isExpanded ? 'text-lg' : 'text-base'}`}>{member.name}</p>
                                   {member.isStaff && (
-                                    <span className="px-2 py-0.5 rounded-md bg-purple-100 text-purple-700 text-[10px] font-black uppercase tracking-wider">
+                                    <span className="px-2 py-0.5 rounded-md bg-purple-100 text-purple-700 text-[10px] font-black uppercase tracking-wider shrink-0 mt-0.5 sm:mt-0">
                                       {t.staff}
                                     </span>
                                   )}
                                   {age !== null && (
-                                    <span className="px-2 py-0.5 bg-indigo-600 text-white text-[8px] font-black uppercase tracking-widest rounded-full shadow-sm">
+                                    <span className="px-2 py-0.5 bg-indigo-600 text-white text-[8px] font-black uppercase tracking-widest rounded-full shadow-sm shrink-0 mt-0.5 sm:mt-0">
                                       {age}
                                     </span>
                                   )}
@@ -722,7 +722,7 @@ export const MemberList: React.FC<MemberListProps> = ({ members, onAddMember, on
                             </div>
                             
                             {!isBatchMode && (
-                              <div className="flex items-center gap-1 pointer-events-auto">
+                              <div className="flex items-center gap-1 pointer-events-auto shrink-0 mt-1 sm:mt-0">
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation();
