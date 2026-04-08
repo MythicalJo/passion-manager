@@ -100,6 +100,13 @@ export const translations = {
     completed: 'Completed',
     missing: 'Missing',
     close: 'Close',
+    staff: 'Staff',
+    isStaff: 'Is Staff?',
+    staffStats: 'Staff Members',
+    adults: 'Youth (18+)',
+    adultStats: 'Youth (18+)',
+    teens: 'Teenagers (17-)',
+    teenStats: 'Teenagers (17 and under)',
   },
   es: {
     attendance: 'Asistencia',
@@ -200,5 +207,12 @@ export const translations = {
     completed: 'Completado',
     missing: 'Faltante',
     close: 'Cerrar',
+    staff: 'Staff',
+    isStaff: '¿Es Staff?',
+    staffStats: 'Miembros de Staff',
+    adults: 'Jóvenes (18+)',
+    adultStats: 'Jóvenes (18+)',
+    teens: 'Adolescentes (17-)',
+    teenStats: 'Adolescentes (17 o menos)',
   }
 };

@@ -21,6 +21,7 @@ interface MemberListProps {
     occupation?: 'none' | 'studying' | 'working' | 'both';
     occupationTime?: 'morning' | 'night' | 'both' | 'none';
     isEvangelized?: boolean;
+    isStaff?: boolean;
   }) => void;
   onUpdateMember: (member: Member) => void;
   onBatchUpdateMembers: (updates: Partial<Member>[]) => void;
@@ -70,7 +71,8 @@ export const MemberList: React.FC<MemberListProps> = ({ members, onAddMember, on
     gpsName: '',
     occupation: 'none' as 'none' | 'studying' | 'working' | 'both',
     occupationTime: 'none' as 'morning' | 'night' | 'both' | 'none',
-    isEvangelized: false
+    isEvangelized: false,
+    isStaff: false
   });
 
   const calculateAge = useMemo(() => (birthday?: string) => {
@@ -140,6 +142,7 @@ export const MemberList: React.FC<MemberListProps> = ({ members, onAddMember, on
             occupation: formData.occupation,
             occupationTime: formData.occupation !== 'none' ? formData.occupationTime : 'none',
             isEvangelized: formData.isEvangelized,
+            isStaff: formData.isStaff,
           });
         }
         setEditingId(null);
@@ -156,6 +159,7 @@ export const MemberList: React.FC<MemberListProps> = ({ members, onAddMember, on
           occupation: formData.occupation,
           occupationTime: formData.occupation !== 'none' ? formData.occupationTime : 'none',
           isEvangelized: formData.isEvangelized,
+          isStaff: formData.isStaff,
           isArchived: false,
         });
         setIsAdding(false);
@@ -171,7 +175,8 @@ export const MemberList: React.FC<MemberListProps> = ({ members, onAddMember, on
         gpsName: '',
         occupation: 'none',
         occupationTime: 'none',
-        isEvangelized: false
+        isEvangelized: false,
+        isStaff: false
       });
     }
   };
@@ -190,7 +195,8 @@ export const MemberList: React.FC<MemberListProps> = ({ members, onAddMember, on
       gpsName: member.gpsName || '',
       occupation: member.occupation || 'none',
       occupationTime: member.occupationTime || 'none',
-      isEvangelized: member.isEvangelized || false
+      isEvangelized: member.isEvangelized || false,
+      isStaff: member.isStaff || false
     });
     setIsAdding(false);
   };
@@ -245,7 +251,8 @@ export const MemberList: React.FC<MemberListProps> = ({ members, onAddMember, on
       gpsName: '',
       occupation: 'none',
       occupationTime: 'none',
-      isEvangelized: false
+      isEvangelized: false,
+      isStaff: false
     });
   };
 
@@ -562,6 +569,23 @@ export const MemberList: React.FC<MemberListProps> = ({ members, onAddMember, on
                         <span className="text-sm font-bold text-slate-600">{t.evangelized}</span>
                       </label>
                     </div>
+
+                    <div className="space-y-3">
+                      <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">{t.staff}</label>
+                      <label className="flex items-center gap-3 cursor-pointer group w-fit">
+                        <div className="relative">
+                          <input
+                            type="checkbox"
+                            checked={formData.isStaff}
+                            onChange={(e) => setFormData({ ...formData, isStaff: e.target.checked })}
+                            className="sr-only"
+                          />
+                          <div className={`w-10 h-5 rounded-full transition-colors ${formData.isStaff ? 'bg-purple-500' : 'bg-slate-200'}`} />
+                          <div className={`absolute top-1 left-1 w-3 h-3 bg-white rounded-full transition-transform ${formData.isStaff ? 'translate-x-5' : ''}`} />
+                        </div>
+                        <span className="text-sm font-bold text-slate-600">{t.staff}</span>
+                      </label>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -640,6 +664,11 @@ export const MemberList: React.FC<MemberListProps> = ({ members, onAddMember, on
                               <div className="space-y-0.5">
                                 <div className="flex items-center gap-2">
                                   <p className={`font-bold text-slate-800 transition-all ${isExpanded ? 'text-lg' : 'text-base'}`}>{member.name}</p>
+                                  {member.isStaff && (
+                                    <span className="px-2 py-0.5 rounded-md bg-purple-100 text-purple-700 text-[10px] font-black uppercase tracking-wider">
+                                      {t.staff}
+                                    </span>
+                                  )}
                                   {age !== null && (
                                     <span className="px-2 py-0.5 bg-indigo-600 text-white text-[8px] font-black uppercase tracking-widest rounded-full shadow-sm">
                                       {age} {t.yrs}

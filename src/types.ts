@@ -13,6 +13,7 @@ export interface Member {
   occupationTime?: 'morning' | 'night' | 'both' | 'none';
   isEvangelized?: boolean;
   isArchived?: boolean;
+  isStaff?: boolean;
 }
 
 export interface AttendanceRecord {
