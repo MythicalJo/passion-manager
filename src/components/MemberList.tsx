@@ -698,7 +698,7 @@ export const MemberList: React.FC<MemberListProps> = ({ members, onAddMember, on
                                   )}
                                   {age !== null && (
                                     <span className="px-2 py-0.5 bg-indigo-600 text-white text-[8px] font-black uppercase tracking-widest rounded-full shadow-sm">
-                                      {age} {t.yrs}
+                                      {age}
                                     </span>
                                   )}
                                 </div>
