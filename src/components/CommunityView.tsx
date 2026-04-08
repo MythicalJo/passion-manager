@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Users, TrendingUp, AlertCircle, Calendar, CheckCircle2, Compass, X, XCircle, ShieldStar, Baby, GraduationCap } from 'lucide-react';
+import { Users, TrendingUp, AlertCircle, Calendar, CheckCircle2, Compass, X, XCircle, Shield, Baby, GraduationCap } from 'lucide-react';
 import { Member, AttendanceRecord } from '../types';
 import { Language, translations } from '../translations';
 import { motion, AnimatePresence } from 'motion/react';
@@ -114,7 +114,7 @@ export const CommunityView: React.FC<CommunityViewProps> = ({ members, attendanc
     } else if (expandedStat === 'staff') {
       title = t.staffStats;
       completedMembers = activeMembers.filter(m => m.isStaff);
-      Icon = ShieldStar;
+      Icon = Shield;
       iconTheme = 'bg-purple-100 text-purple-600';
       isDemographicModal = true;
     } else if (expandedStat === 'adults') {
@@ -165,7 +165,7 @@ export const CommunityView: React.FC<CommunityViewProps> = ({ members, attendanc
           </div>
           
           <div className="p-6 overflow-y-auto space-y-8 flex-1">
-            {/* Completed Section */
+            {/* Completed Section */}
             <div>
               <div className="flex items-center gap-2 mb-4">
                 {isDemographicModal ? <Users className="w-5 h-5 text-indigo-500" /> : <CheckCircle2 className="w-5 h-5 text-emerald-500" />}
@@ -307,7 +307,7 @@ export const CommunityView: React.FC<CommunityViewProps> = ({ members, attendanc
           className="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sm flex items-center sm:flex-col gap-4 hover:border-purple-300 hover:shadow-md transition-all text-left sm:text-center outline-none group cursor-pointer"
         >
           <div className="w-12 h-12 rounded-2xl bg-purple-50 flex items-center justify-center shrink-0 group-hover:bg-purple-100 transition-colors">
-            <ShieldStar className="w-6 h-6 text-purple-500 group-hover:scale-110 transition-transform" />
+            <Shield className="w-6 h-6 text-purple-500 group-hover:scale-110 transition-transform" />
           </div>
           <div>
             <p className="text-3xl font-black text-slate-800 mb-1">{staffCount}</p>
