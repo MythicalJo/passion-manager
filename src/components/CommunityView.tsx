@@ -131,10 +131,15 @@ export const CommunityView: React.FC<CommunityViewProps> = ({ members, attendanc
       isDemographicModal = true;
     }
 
-    if (!isDemographicModal) {
+    if (!isDemographicModal || expandedStat === 'staff') {
       completedMembers = [...completedMembers].sort((a, b) => {
         if (expandedStat === 'gps') {
           const mainCompare = (a.gpsName || '').localeCompare(b.gpsName || '');
+          if (mainCompare !== 0) return mainCompare;
+        } else if (expandedStat === 'staff') {
+          const ministryA = (a.ministry || 'Unknown').toLowerCase();
+          const ministryB = (b.ministry || 'Unknown').toLowerCase();
+          const mainCompare = ministryA.localeCompare(ministryB);
           if (mainCompare !== 0) return mainCompare;
         }
         return a.name.localeCompare(b.name);
@@ -180,6 +185,9 @@ export const CommunityView: React.FC<CommunityViewProps> = ({ members, attendanc
                       <span className="font-bold text-slate-700">{m.name}</span>
                       {expandedStat === 'gps' && m.gpsName && (
                         <span className="text-xs font-semibold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-md max-w-full truncate">{m.gpsName}</span>
+                      )}
+                      {expandedStat === 'staff' && m.ministry && (
+                        <span className="text-xs font-semibold text-purple-600 bg-purple-50 px-2 py-1 rounded-md max-w-full truncate">{m.ministry}</span>
                       )}
                     </div>
                   ))

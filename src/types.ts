@@ -14,6 +14,7 @@ export interface Member {
   isEvangelized?: boolean;
   isArchived?: boolean;
   isStaff?: boolean;
+  ministry?: string;
 }
 
 export interface AttendanceRecord {
