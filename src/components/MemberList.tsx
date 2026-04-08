@@ -676,7 +676,7 @@ export const MemberList: React.FC<MemberListProps> = ({ members, onAddMember, on
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, scale: 0.95 }}
                           onClick={() => isBatchMode ? toggleSelection(member.id) : toggleExpand(member.id)}
-                          className={`group bg-white rounded-2xl border transition-all cursor-pointer overflow-hidden ${isExpanded ? 'p-6 border-indigo-200 shadow-lg ring-1 ring-indigo-500/5' : 'p-3 border-slate-100 shadow-sm hover:border-indigo-100 hover:shadow-md'} ${isSelected ? 'ring-2 ring-indigo-500 border-indigo-500 bg-indigo-50/30' : ''}`}
+                          className={`group bg-white rounded-2xl border transition-colors cursor-pointer overflow-hidden ${isExpanded ? 'p-6 border-indigo-200 shadow-lg ring-1 ring-indigo-500/5' : 'p-3 border-slate-100 shadow-sm hover:border-indigo-100 hover:shadow-md'} ${isSelected ? 'ring-2 ring-indigo-500 border-indigo-500 bg-indigo-50/30' : ''}`}
                         >
                           <div className="flex items-start sm:items-center justify-between pointer-events-none w-full gap-2 min-w-0">
                             <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
