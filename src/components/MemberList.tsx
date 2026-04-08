@@ -690,7 +690,7 @@ export const MemberList: React.FC<MemberListProps> = ({ members, onAddMember, on
                               </div>
                               <div className="space-y-0.5 flex-1 min-w-0">
                                 <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                                  <p className={`font-bold text-slate-800 transition-all truncate max-w-full ${isExpanded ? 'text-lg' : 'text-base'}`}>{member.name}</p>
+                                  <p className={`font-bold text-slate-800 transition-all break-words ${isExpanded ? 'text-lg' : 'text-base'}`}>{member.name}</p>
                                   {member.isStaff && (
                                     <span className="px-2 py-0.5 rounded-md bg-purple-100 text-purple-700 text-[10px] font-black uppercase tracking-wider shrink-0 mt-0.5 sm:mt-0">
                                       {t.staff}
