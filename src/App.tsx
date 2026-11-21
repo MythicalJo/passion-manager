@@ -21,8 +21,22 @@ export default function App() {
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
   const [gpsGroups, setGpsGroups] = useState<string[]>([]);
   const [language, setLanguage] = useState<Language>('es');
+  const [isDark, setIsDark] = useState<boolean>(() => {
+    const saved = localStorage.getItem('yg_theme');
+    return saved === 'dark';
+  });
 
   const t = translations[language];
+
+  // Apply dark class to <html> on mount and whenever isDark changes
+  useEffect(() => {
+    if (isDark) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    localStorage.setItem('yg_theme', isDark ? 'dark' : 'light');
+  }, [isDark]);
 
   const sanitizeForFirestore = <T,>(data: T): T => {
     return JSON.parse(JSON.stringify(data));
@@ -272,9 +286,9 @@ export default function App() {
   const hideSidebar = view === 'members' || view === 'community' || view === 'settings';
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col md:flex-row">
       {/* Sidebar Navigation */}
-      <nav className="w-full md:w-24 bg-white border-b md:border-b-0 md:border-r border-slate-200 flex flex-row md:flex-col items-center py-3 md:py-8 px-2 md:px-0 gap-2 md:gap-8 z-10">
+      <nav className="w-full md:w-24 bg-white dark:bg-slate-900 border-b md:border-b-0 md:border-r border-slate-200 dark:border-slate-800 flex flex-row md:flex-col items-center py-3 md:py-8 px-2 md:px-0 gap-2 md:gap-8 z-10">
         <div className="hidden md:flex w-12 h-12 bg-indigo-600 rounded-2xl items-center justify-center shadow-lg shadow-indigo-200 mb-4">
           <Users className="text-white w-6 h-6" />
         </div>
@@ -286,8 +300,8 @@ export default function App() {
               className={cn(
                 "p-2 md:p-3 rounded-xl md:rounded-2xl transition-all duration-200 flex flex-col items-center gap-1 group min-w-[60px] md:min-w-0",
                 view === item.id 
-                  ? "bg-indigo-50 text-indigo-600" 
-                  : "text-slate-400 hover:bg-slate-50 hover:text-slate-600"
+                  ? "bg-indigo-50 dark:bg-indigo-950 text-indigo-600" 
+                  : "text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-600 dark:hover:text-slate-300"
               )}
             >
               <item.icon className={cn("w-5 h-5 md:w-6 md:h-6", view === item.id ? "scale-110" : "group-hover:scale-110 transition-transform")} />
@@ -308,7 +322,7 @@ export default function App() {
               exit={{ width: 0, opacity: 0 }}
               transition={{ duration: 0.3, ease: "easeInOut" }}
               className={cn(
-                "w-full lg:w-96 bg-slate-50 border-r border-slate-100 overflow-hidden whitespace-nowrap",
+                "w-full lg:w-96 bg-slate-50 dark:bg-slate-900 border-r border-slate-100 dark:border-slate-800 overflow-hidden whitespace-nowrap",
                 view === 'attendance' && "hidden lg:block"
               )}
             >
@@ -332,7 +346,7 @@ export default function App() {
 
         {/* Right Section: Dynamic View */}
         <div className={cn(
-          "flex-1 p-4 md:p-8 bg-white shadow-2xl shadow-slate-200/50 overflow-hidden relative z-10 transition-all duration-300",
+          "flex-1 p-4 md:p-8 bg-white dark:bg-slate-900 shadow-2xl shadow-slate-200/50 dark:shadow-slate-950/50 overflow-hidden relative z-10 transition-all duration-300",
           !hideSidebar ? "lg:rounded-l-[3rem]" : "rounded-0"
         )}>
           <AnimatePresence mode="wait">
@@ -385,6 +399,8 @@ export default function App() {
                   onClearAll={handleClearAll}
                   language={language}
                   onLanguageChange={setLanguage}
+                  isDark={isDark}
+                  onToggleDark={() => setIsDark(d => !d)}
                 />
               )}
             </motion.div>
