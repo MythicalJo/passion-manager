@@ -24,9 +24,10 @@ interface CalendarProps {
   language: Language;
   attendanceRecords: AttendanceRecord[];
   members: Member[];
+  className?: string;
 }
 
-export const Calendar: React.FC<CalendarProps> = ({ selectedDate, onDateSelect, language, attendanceRecords, members }) => {
+export const Calendar: React.FC<CalendarProps> = ({ selectedDate, onDateSelect, language, attendanceRecords, members, className }) => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const locale = language === 'es' ? es : enUS;
 
@@ -62,7 +63,7 @@ export const Calendar: React.FC<CalendarProps> = ({ selectedDate, onDateSelect, 
   }, [birthdayMembers, selectedDate]);
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+    <div className={cn("bg-white rounded-2xl shadow-sm border border-slate-200 p-6", className)}>
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-lg font-semibold text-slate-800 capitalize">
           {format(currentMonth, 'MMMM yyyy', { locale })}

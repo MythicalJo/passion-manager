@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Users, Calendar as CalendarIcon, ClipboardCheck, History, Settings, BarChart3 } from 'lucide-react';
+import { format } from 'date-fns';
 import { Member, AttendanceRecord, ViewMode } from './types';
 import { Calendar } from './components/Calendar';
 import { MemberList } from './components/MemberList';
@@ -82,6 +83,36 @@ export default function App() {
     const newMembers = [...members, newMember];
     setMembers(newMembers);
     pushToCloud(newMembers, attendanceRecords);
+  };
+
+  const handleQuickAddMember = (name: string) => {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    const newId = crypto.randomUUID();
+    const newMember: Member = {
+      id: newId,
+      name: trimmed,
+      joinDate: new Date().toISOString(),
+    };
+    const newMembers = [...members, newMember];
+    setMembers(newMembers);
+
+    const dateKey = format(selectedDate, 'yyyy-MM-dd');
+    let newAttendance = [...attendanceRecords];
+    const existingRecord = newAttendance.find((r) => r.date === dateKey);
+    if (existingRecord) {
+      if (!existingRecord.presentMemberIds.includes(newId)) {
+        newAttendance = newAttendance.map((r) => 
+          r.date === dateKey 
+            ? { ...r, presentMemberIds: [...r.presentMemberIds, newId] } 
+            : r
+        );
+      }
+    } else {
+      newAttendance = [...newAttendance, { date: dateKey, presentMemberIds: [newId] }];
+    }
+    setAttendanceRecords(newAttendance);
+    pushToCloud(newMembers, newAttendance);
   };
 
   const handleUpdateMember = (updatedMember: Member) => {
@@ -192,7 +223,10 @@ export default function App() {
               animate={{ width: 'auto', opacity: 1 }}
               exit={{ width: 0, opacity: 0 }}
               transition={{ duration: 0.3, ease: "easeInOut" }}
-              className="w-full lg:w-96 bg-slate-50 border-r border-slate-100 overflow-hidden whitespace-nowrap"
+              className={cn(
+                "w-full lg:w-96 bg-slate-50 border-r border-slate-100 overflow-hidden whitespace-nowrap",
+                view === 'attendance' && "hidden lg:block"
+              )}
             >
               <div className="p-6 md:p-8 flex flex-col gap-8 w-full lg:w-96">
                 <header className="mb-2">
@@ -229,9 +263,11 @@ export default function App() {
               {view === 'attendance' && (
                 <AttendanceTracker
                   selectedDate={selectedDate}
+                  onDateSelect={setSelectedDate}
                   members={members}
                   attendanceRecords={attendanceRecords}
                   onToggleAttendance={handleToggleAttendance}
+                  onQuickAddMember={handleQuickAddMember}
                   language={language}
                 />
               )}

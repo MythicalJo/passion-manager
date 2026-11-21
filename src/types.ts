@@ -7,6 +7,7 @@ export interface Member {
   likedFood?: string;
   address?: string;
   phone?: string;
+  instagram?: string;
   isGpsMember?: boolean;
   gpsName?: string;
   occupation?: 'none' | 'studying' | 'working' | 'both';

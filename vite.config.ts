@@ -6,11 +6,9 @@ import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig(({mode}) => {
   const env = loadEnv(mode, '.', '');
-  const repoName = process.env.GITHUB_REPOSITORY ? process.env.GITHUB_REPOSITORY.split('/')[1] : '';
-  const basePath = repoName ? `/${repoName}/` : '/';
 
   return {
-    base: basePath,
+    base: '/passion-manager/',
     plugins: [
       react(), 
       tailwindcss(),

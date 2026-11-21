@@ -1,11 +1,21 @@
 import React, { useState } from 'react';
-import { Users, TrendingUp, AlertCircle, Calendar, CheckCircle2, Compass, X, XCircle, Shield, Baby, GraduationCap } from 'lucide-react';
+import { Users, TrendingUp, AlertCircle, Calendar, CheckCircle2, Compass, X, XCircle, Shield, Baby, GraduationCap, Instagram } from 'lucide-react';
 import { Member, AttendanceRecord } from '../types';
 import { Language, translations } from '../translations';
 import { motion, AnimatePresence } from 'motion/react';
-import { format, subMonths, startOfMonth, isAfter, parseISO, differenceInYears } from 'date-fns';
+import { format, subMonths, startOfMonth, isAfter, parseISO, differenceInYears, differenceInDays } from 'date-fns';
 import { enUS, es } from 'date-fns/locale';
 import { cn } from '../lib/utils';
+
+const cleanInstagramHandle = (input?: string): string | undefined => {
+  if (!input) return undefined;
+  let handle = input.trim();
+  if (!handle) return undefined;
+  handle = handle.replace(/^(?:https?:\/\/)?(?:www\.)?instagram\.com\/?/i, '');
+  handle = handle.split('?')[0].split('#')[0];
+  handle = handle.replace(/^@+/, '').replace(/\/+$/, '').trim();
+  return handle || undefined;
+};
 
 interface CommunityViewProps {
   members: Member[];
@@ -25,26 +35,46 @@ export const CommunityView: React.FC<CommunityViewProps> = ({ members, attendanc
     } catch { return null; }
   };
 
+  const now = new Date();
+
   // Sort records by date descending
   const sortedRecords = [...attendanceRecords].sort((a, b) => b.date.localeCompare(a.date));
   
-  // Last 3 services (dates where attendance was taken)
-  const lastThreeServices = sortedRecords.slice(0, 3);
+  // Services within the last 14 days (2 weeks)
+  const servicesLast14Days = sortedRecords.filter(r => {
+    try {
+      const days = differenceInDays(now, parseISO(r.date));
+      return days >= 0 && days <= 14;
+    } catch {
+      return false;
+    }
+  });
+
+  // Services to consider: services in the last 14 days, or fallback to the last 2 recorded services if none in the last 14 days
+  const targetServices = servicesLast14Days.length > 0 
+    ? servicesLast14Days 
+    : sortedRecords.slice(0, 2);
   
-  // Find members who haven't attended in the last 3 services
+  // Find members who haven't attended in the last 2 weeks (14 days)
   const missingMembers = members.filter(member => {
     // Exclude archived members
     if (member.isArchived) return false;
     
-    // Check if member has ANY attendance recorded ever
-    const hasAttendedEver = attendanceRecords.some(r => r.presentMemberIds.includes(member.id));
-    if (!hasAttendedEver) return false; // New members with 0 attendance aren't "missing"
+    // Exclude members whose joinDate is less than 14 days ago
+    if (member.joinDate) {
+      try {
+        const daysSinceJoin = differenceInDays(now, parseISO(member.joinDate));
+        if (daysSinceJoin < 14) return false;
+      } catch {
+        // do not exclude if parse fails
+      }
+    }
 
     // If there are no services yet, they aren't "missing"
-    if (lastThreeServices.length === 0) return false;
+    if (targetServices.length === 0) return false;
     
-    // Check if member is present in ANY of the last 3 services
-    const attendedAny = lastThreeServices.some(record => 
+    // Check if member is present in ANY of the target services
+    const attendedAny = targetServices.some(record => 
       record.presentMemberIds.includes(member.id)
     );
     
@@ -52,7 +82,6 @@ export const CommunityView: React.FC<CommunityViewProps> = ({ members, attendanc
   });
 
   // Growth Logic: Attendance this month vs last month
-  const now = new Date();
   const thisMonthStart = startOfMonth(now);
   const lastMonthStart = startOfMonth(subMonths(now, 1));
 
@@ -358,7 +387,7 @@ export const CommunityView: React.FC<CommunityViewProps> = ({ members, attendanc
             <h3 className="text-lg font-bold text-slate-800">{t.needsConnection}</h3>
           </div>
           <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-            {t.missedLast3}
+            {t.missedLast2Weeks || t.missedLast3}
           </span>
         </div>
 
@@ -367,35 +396,49 @@ export const CommunityView: React.FC<CommunityViewProps> = ({ members, attendanc
             <div className="bg-emerald-50 border border-emerald-100 rounded-3xl p-8 text-center">
               <CheckCircle2 className="w-12 h-12 text-emerald-500 mx-auto mb-3" />
               <p className="text-emerald-900 font-bold">{t.everyoneConnected}</p>
-              <p className="text-emerald-600 text-sm">{t.allAttended}</p>
+              <p className="text-emerald-600 text-sm">{t.allAttended2Weeks || t.allAttended}</p>
             </div>
           ) : (
-            missingMembers.map(member => (
-              <motion.div
-                key={member.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="flex items-center justify-between p-5 bg-white rounded-3xl border border-slate-100 shadow-sm hover:border-amber-100 transition-all"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 font-bold">
-                    {member.name.charAt(0).toUpperCase()}
-                  </div>
-                  <div>
-                    <p className="font-bold text-slate-800">{member.name}</p>
-                    <div className="flex items-center gap-3 mt-0.5">
-                      <span className="text-xs text-slate-400 flex items-center gap-1">
-                        <Calendar className="w-3 h-3" />
-                        {t.joined} {format(parseISO(member.joinDate), 'MMM yyyy', { locale })}
-                      </span>
+            missingMembers.map(member => {
+              const cleanHandle = cleanInstagramHandle(member.instagram);
+              return (
+                <motion.div
+                  key={member.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex items-center justify-between p-5 bg-white rounded-3xl border border-slate-100 shadow-sm hover:border-amber-100 transition-all"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 font-bold">
+                      {member.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <p className="font-bold text-slate-800">{member.name}</p>
+                      <div className="flex flex-wrap items-center gap-3 mt-0.5">
+                        <span className="text-xs text-slate-400 flex items-center gap-1">
+                          <Calendar className="w-3 h-3" />
+                          {t.joined} {format(parseISO(member.joinDate), 'MMM yyyy', { locale })}
+                        </span>
+                        {cleanHandle && (
+                          <a
+                            href={`https://instagram.com/${cleanHandle}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-pink-600 hover:text-pink-700 hover:underline flex items-center gap-1 font-medium"
+                          >
+                            <Instagram className="w-3 h-3" />
+                            @{cleanHandle}
+                          </a>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div className="px-4 py-2 bg-amber-50 rounded-2xl">
-                  <span className="text-[10px] font-black text-amber-600 uppercase tracking-widest">{t.atRisk}</span>
-                </div>
-              </motion.div>
-            ))
+                  <div className="px-4 py-2 bg-amber-50 rounded-2xl">
+                    <span className="text-[10px] font-black text-amber-600 uppercase tracking-widest">{t.atRisk}</span>
+                  </div>
+                </motion.div>
+              );
+            })
           )}
         </div>
       </div>

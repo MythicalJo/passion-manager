@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { Download, Upload, Trash2, Globe, ShieldAlert, Cloud, Bug } from 'lucide-react';
-import { saveGithubConfig, clearGithubConfig, getGithubToken, getGistId, initGist, getLastSyncDate, getLastError } from '../lib/gists';
+import { Download, Upload, Trash2, Globe, ShieldAlert, Cloud, Bug, LogIn, LogOut, UserCheck } from 'lucide-react';
+import { signInLeader, signOutLeader, subscribeToAuth, getLastSyncDate, getLastError } from '../lib/gists';
+import { User } from 'firebase/auth';
 import { Member, AttendanceRecord } from '../types';
 import { Language, translations } from '../translations';
 import { motion } from 'motion/react';
@@ -23,53 +24,60 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   onLanguageChange,
 }) => {
   const t = translations[language];
+  const isEs = language === 'es';
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [showConfirmClear, setShowConfirmClear] = React.useState(false);
-  const [importStatus, setImportStatus] = React.useState<'idle' | 'success' | 'error'>('idle');
-  const [githubToken, setGithubToken] = React.useState(getGithubToken() || '');
-  const [gistId, setGistId] = React.useState(getGistId() || '');
-  const [isConnected, setIsConnected] = React.useState(!!getGithubToken() && !!getGistId());
-  const [isConnecting, setIsConnecting] = React.useState(false);
-  const [configError, setConfigError] = React.useState(false);
+  const [showConfirmClear, setShowConfirmClear] = useState(false);
+  const [importStatus, setImportStatus] = useState<'idle' | 'success' | 'error'>('idle');
+
+  // Firebase Auth State
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isSigningIn, setIsSigningIn] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
 
   const [debugDate, setDebugDate] = useState(getLastSyncDate());
   const [debugError, setDebugError] = useState(getLastError());
 
   useEffect(() => {
-    if (isConnected) {
+    const unsubscribe = subscribeToAuth((user) => {
+      setCurrentUser(user);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (currentUser) {
       const interval = setInterval(() => {
         setDebugDate(getLastSyncDate());
         setDebugError(getLastError());
       }, 2000);
       return () => clearInterval(interval);
     }
-  }, [isConnected]);
+  }, [currentUser]);
 
-  const handleConnectCloud = async () => {
-    setIsConnecting(true);
-    if (saveGithubConfig(githubToken, gistId)) {
-      const success = await initGist();
-      if (success) {
-        setIsConnected(true);
-        setConfigError(false);
-        window.location.reload();
-      } else {
-        setConfigError(true);
-        clearGithubConfig();
-        setIsConnecting(false);
-      }
-    } else {
-      setConfigError(true);
-      setIsConnecting(false);
+  const handleSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.trim() || !password) return;
+    setIsSigningIn(true);
+    setAuthError(null);
+    try {
+      await signInLeader(email, password);
+      setEmail('');
+      setPassword('');
+    } catch (err: any) {
+      setAuthError(err?.message || (isEs ? 'Error al iniciar sesión' : 'Failed to sign in. Please check credentials.'));
+    } finally {
+      setIsSigningIn(false);
     }
   };
 
-  const handleDisconnectCloud = () => {
-    clearGithubConfig();
-    setIsConnected(false);
-    setGithubToken('');
-    setGistId('');
-    window.location.reload();
+  const handleSignOut = async () => {
+    try {
+      await signOutLeader();
+    } catch (err: any) {
+      console.error('Sign out error:', err);
+    }
   };
 
   const handleExport = () => {
@@ -77,13 +85,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       members,
       attendanceRecords,
       exportedAt: new Date().toISOString(),
-      version: '1.0'
+      version: '2.0'
     };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `youth-group-data-${new Date().toISOString().split('T')[0]}.json`;
+    a.download = `passion-manager-data-${new Date().toISOString().split('T')[0]}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -196,12 +204,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           </div>
         </div>
 
-        {/* Cloud Sync Section */}
+        {/* Cloud Sync Section - Firebase Realtime Firestore & Auth */}
         <div className="bg-white rounded-[1.5rem] md:rounded-[2.5rem] p-5 md:p-8 border border-slate-100 shadow-sm relative overflow-hidden">
           <div className="absolute top-0 right-0 p-6 md:p-8">
-            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${isConnected ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-500'}`}>
-              <div className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-emerald-500' : 'bg-slate-400'}`}></div>
-              {isConnected ? t.cloudConnected : t.cloudDisconnected}
+            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${currentUser ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-500'}`}>
+              <div className={`w-1.5 h-1.5 rounded-full ${currentUser ? 'bg-emerald-500' : 'bg-slate-400'}`}></div>
+              {currentUser ? t.cloudConnected : t.cloudDisconnected}
             </span>
           </div>
           <div className="flex items-center gap-3 mb-2">
@@ -210,66 +218,102 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             </div>
             <h3 className="text-base md:text-lg font-bold text-slate-800">{t.cloudSync}</h3>
           </div>
-          <p className="text-slate-500 text-sm mb-6 max-w-md">{t.cloudSyncDesc}</p>
+          <p className="text-slate-500 text-sm mb-6 max-w-md">
+            {isEs 
+              ? 'Sincronización en tiempo real con Firebase Firestore. Inicia sesión como líder para mantener múltiples dispositivos actualizados instantáneamente.'
+              : 'Real-time synchronization with Firebase Firestore. Sign in as a leader to keep all devices updated instantaneously.'
+            }
+          </p>
           
-          {isConnected ? (
+          {currentUser ? (
             <div className="flex flex-col gap-4">
-              <div className="p-4 bg-slate-50 border border-slate-100 rounded-xl">
-                <p className="text-xs text-slate-500 uppercase tracking-wider font-bold mb-1">{t.gistIdStr || "Gist ID"}</p>
-                <code className="text-sm font-mono text-slate-800 font-bold select-all">{getGistId()}</code>
+              <div className="p-4 bg-emerald-50/70 border border-emerald-100 rounded-xl flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 shrink-0">
+                  <UserCheck className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-xs text-emerald-700 uppercase tracking-wider font-bold">
+                    {isEs ? 'Líder Conectado' : 'Leader Signed In'}
+                  </p>
+                  <p className="text-sm font-bold text-slate-800">{currentUser.email}</p>
+                </div>
               </div>
               
               <div className="p-4 bg-slate-800 rounded-xl flex flex-col gap-2 shadow-inner">
                 <div className="flex items-center gap-2 mb-1">
                   <Bug className="w-4 h-4 text-emerald-400" />
-                  <p className="text-xs text-emerald-400 uppercase tracking-wider font-bold">Debug Status</p>
+                  <p className="text-xs text-emerald-400 uppercase tracking-wider font-bold">Sync Status</p>
                 </div>
-                <p className="text-xs text-slate-300 font-mono">Last Sync Date: <span className="text-white">{debugDate}</span></p>
-                <p className="text-xs text-slate-300 font-mono flex flex-col gap-1">Last API Error: <span className={debugError === 'None' ? 'text-emerald-400' : 'text-rose-400'}>{debugError}</span></p>
+                <p className="text-xs text-slate-300 font-mono">
+                  Document: <span className="text-emerald-300">groups/main/data/state</span>
+                </p>
+                <p className="text-xs text-slate-300 font-mono">
+                  Last Sync: <span className="text-white">{debugDate}</span>
+                </p>
+                <p className="text-xs text-slate-300 font-mono flex flex-col gap-1">
+                  Status: <span className={debugError === 'None' ? 'text-emerald-400' : 'text-rose-400'}>{debugError === 'None' ? 'Active Real-Time Sync' : debugError}</span>
+                </p>
               </div>
 
               <button
-                onClick={handleDisconnectCloud}
-                className="py-3 md:py-4 px-4 md:px-6 rounded-xl md:rounded-2xl bg-rose-50 text-rose-600 font-bold hover:bg-rose-100 transition-all text-sm md:text-base border border-rose-200"
+                onClick={handleSignOut}
+                className="flex items-center justify-center gap-2 py-3 md:py-4 px-4 md:px-6 rounded-xl md:rounded-2xl bg-rose-50 text-rose-600 font-bold hover:bg-rose-100 transition-all text-sm md:text-base border border-rose-200"
               >
-                {t.disconnect}
+                <LogOut className="w-4 h-4" />
+                <span>{isEs ? 'Cerrar Sesión' : 'Sign Out'}</span>
               </button>
             </div>
           ) : (
-            <div className="flex flex-col gap-3">
-              <input
-                type="password"
-                value={githubToken}
-                onChange={(e) => {
-                  setGithubToken(e.target.value);
-                  setConfigError(false);
-                }}
-                placeholder={t.githubTokenStr || "GitHub Access Token"}
-                className={`w-full p-4 text-sm font-mono bg-slate-50 rounded-xl border-2 transition-colors placeholder-slate-400 focus:outline-none focus:bg-white ${
-                  configError ? 'border-rose-300 text-rose-900 focus:border-rose-500' : 'border-slate-100 text-slate-700 focus:border-blue-500'
-                }`}
-              />
-              <input
-                type="text"
-                value={gistId}
-                onChange={(e) => {
-                  setGistId(e.target.value);
-                  setConfigError(false);
-                }}
-                placeholder={t.gistIdStr || "Gist ID (Leave empty if first device)"}
-                className={`w-full p-4 text-sm font-mono bg-slate-50 rounded-xl border-2 transition-colors placeholder-slate-400 focus:outline-none focus:bg-white ${
-                  configError ? 'border-rose-300 text-rose-900 focus:border-rose-500' : 'border-slate-100 text-slate-700 focus:border-blue-500'
-                }`}
-              />
-              {configError && <p className="text-rose-500 text-xs font-bold px-1">{t.invalidConfig}</p>}
+            <form onSubmit={handleSignIn} className="flex flex-col gap-3 max-w-md">
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                  {isEs ? 'Correo Electrónico del Líder' : 'Leader Email'}
+                </label>
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    setAuthError(null);
+                  }}
+                  placeholder="leader@passion.org"
+                  className="w-full p-3.5 text-sm bg-slate-50 rounded-xl border border-slate-200 placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                  {isEs ? 'Contraseña' : 'Password'}
+                </label>
+                <input
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    setAuthError(null);
+                  }}
+                  placeholder="••••••••"
+                  className="w-full p-3.5 text-sm bg-slate-50 rounded-xl border border-slate-200 placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                />
+              </div>
+
+              {authError && (
+                <p className="text-rose-500 text-xs font-bold px-1 bg-rose-50 py-2 rounded-lg border border-rose-100">
+                  {authError}
+                </p>
+              )}
+
               <button
-                onClick={handleConnectCloud}
-                disabled={isConnecting}
-                className="py-3 md:py-4 px-4 md:px-6 rounded-xl md:rounded-2xl bg-blue-600 text-white font-bold hover:bg-blue-700 disabled:opacity-50 transition-all shadow-lg shadow-blue-200 text-sm md:text-base self-start"
+                type="submit"
+                disabled={isSigningIn}
+                className="mt-2 flex items-center justify-center gap-2 py-3 md:py-3.5 px-6 rounded-xl md:rounded-2xl bg-blue-600 text-white font-bold hover:bg-blue-700 disabled:opacity-50 transition-all shadow-lg shadow-blue-200 text-sm md:text-base self-start"
               >
-                {isConnecting ? '...' : t.connect}
+                <LogIn className="w-4 h-4" />
+                <span>{isSigningIn ? '...' : (isEs ? 'Iniciar Sesión' : 'Sign In')}</span>
               </button>
-            </div>
+            </form>
           )}
         </div>
 
@@ -334,7 +378,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       </div>
       
       <div className="text-center mt-8 pb-4">
-        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Passion Manager v1.1.5</p>
+        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Passion Manager v2.0.0</p>
       </div>
     </div>
   );

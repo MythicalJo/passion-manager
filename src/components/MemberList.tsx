@@ -1,11 +1,21 @@
 import React, { useState, useMemo, useRef } from 'react';
-import { UserPlus, Trash2, User, Edit2, X, Check, Calendar as CalendarIcon, Heart, MapPin, Utensils, Phone, Compass, ChevronDown, Search, CheckCircle2, Archive, ArchiveRestore, Shield } from 'lucide-react';
+import { UserPlus, Trash2, User, Edit2, X, Check, Calendar as CalendarIcon, Heart, MapPin, Utensils, Phone, Compass, ChevronDown, Search, CheckCircle2, Archive, ArchiveRestore, Shield, Instagram } from 'lucide-react';
 import { Member } from '../types';
 import { Language, translations } from '../translations';
 import { motion, AnimatePresence } from 'motion/react';
 import { differenceInYears, parseISO, format } from 'date-fns';
 import { enUS, es } from 'date-fns/locale';
 import { cn } from '../lib/utils';
+
+export const cleanInstagramHandle = (input?: string): string | undefined => {
+  if (!input) return undefined;
+  let handle = input.trim();
+  if (!handle) return undefined;
+  handle = handle.replace(/^(?:https?:\/\/)?(?:www\.)?instagram\.com\/?/i, '');
+  handle = handle.split('?')[0].split('#')[0];
+  handle = handle.replace(/^@+/, '').replace(/\/+$/, '').trim();
+  return handle || undefined;
+};
 
 interface MemberListProps {
   members: Member[];
@@ -16,6 +26,7 @@ interface MemberListProps {
     likedFood?: string; 
     address?: string; 
     phone?: string;
+    instagram?: string;
     isGpsMember?: boolean;
     gpsName?: string;
     occupation?: 'none' | 'studying' | 'working' | 'both';
@@ -23,6 +34,7 @@ interface MemberListProps {
     isEvangelized?: boolean;
     isStaff?: boolean;
     ministry?: string;
+    isArchived?: boolean;
   }) => void;
   onUpdateMember: (member: Member) => void;
   onBatchUpdateMembers: (updates: Partial<Member>[]) => void;
@@ -68,6 +80,7 @@ export const MemberList: React.FC<MemberListProps> = ({ members, onAddMember, on
     likedFood: '',
     address: '',
     phone: '',
+    instagram: '',
     isGpsMember: false,
     gpsName: '',
     occupation: 'none' as 'none' | 'studying' | 'working' | 'both',
@@ -97,6 +110,7 @@ export const MemberList: React.FC<MemberListProps> = ({ members, onAddMember, on
       if (!matchesArchive) return false;
       return m.name.toLowerCase().includes(query) ||
         (m.phone && m.phone.includes(query)) ||
+        (m.instagram && m.instagram.toLowerCase().includes(query)) ||
         (m.gpsName && m.gpsName.toLowerCase().includes(query));
     });
 
@@ -128,6 +142,7 @@ export const MemberList: React.FC<MemberListProps> = ({ members, onAddMember, on
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (formData.name.trim() && !isDuplicateName) {
+      const cleanHandle = cleanInstagramHandle(formData.instagram);
       if (editingId) {
         const member = members.find(m => m.id === editingId);
         if (member) {
@@ -139,6 +154,7 @@ export const MemberList: React.FC<MemberListProps> = ({ members, onAddMember, on
             likedFood: formData.likedFood || undefined,
             address: formData.address || undefined,
             phone: formData.phone || undefined,
+            instagram: cleanHandle,
             isGpsMember: formData.isGpsMember,
             gpsName: formData.isGpsMember ? formData.gpsName : undefined,
             occupation: formData.occupation,
@@ -157,6 +173,7 @@ export const MemberList: React.FC<MemberListProps> = ({ members, onAddMember, on
           likedFood: formData.likedFood || undefined,
           address: formData.address || undefined,
           phone: formData.phone || undefined,
+          instagram: cleanHandle,
           isGpsMember: formData.isGpsMember,
           gpsName: formData.isGpsMember ? formData.gpsName : undefined,
           occupation: formData.occupation,
@@ -175,6 +192,7 @@ export const MemberList: React.FC<MemberListProps> = ({ members, onAddMember, on
         likedFood: '', 
         address: '', 
         phone: '', 
+        instagram: '',
         isGpsMember: false, 
         gpsName: '',
         occupation: 'none',
@@ -196,6 +214,7 @@ export const MemberList: React.FC<MemberListProps> = ({ members, onAddMember, on
       likedFood: member.likedFood || '',
       address: member.address || '',
       phone: member.phone || '',
+      instagram: member.instagram || '',
       isGpsMember: member.isGpsMember || false,
       gpsName: member.gpsName || '',
       occupation: member.occupation || 'none',
@@ -253,6 +272,7 @@ export const MemberList: React.FC<MemberListProps> = ({ members, onAddMember, on
       likedFood: '', 
       address: '', 
       phone: '', 
+      instagram: '',
       isGpsMember: false, 
       gpsName: '',
       occupation: 'none',
@@ -424,6 +444,16 @@ export const MemberList: React.FC<MemberListProps> = ({ members, onAddMember, on
                     type="tel"
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all bg-white"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">{t.instagram}</label>
+                  <input
+                    type="text"
+                    placeholder={t.instagramPlaceholder}
+                    value={formData.instagram}
+                    onChange={(e) => setFormData({ ...formData, instagram: e.target.value })}
                     className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all bg-white"
                   />
                 </div>
@@ -710,6 +740,19 @@ export const MemberList: React.FC<MemberListProps> = ({ members, onAddMember, on
                                         {member.phone}
                                       </div>
                                     )}
+                                    {cleanInstagramHandle(member.instagram) && (
+                                      <a
+                                        href={`https://instagram.com/${cleanInstagramHandle(member.instagram)}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        onClick={(e) => e.stopPropagation()}
+                                        className="flex items-center gap-1 shrink-0 text-pink-600 hover:text-pink-700 hover:underline pointer-events-auto"
+                                        title={`@${cleanInstagramHandle(member.instagram)}`}
+                                      >
+                                        <Instagram className="w-2.5 h-2.5 shrink-0" />
+                                        <span>@{cleanInstagramHandle(member.instagram)}</span>
+                                      </a>
+                                    )}
                                     {member.isGpsMember && member.gpsName && (
                                       <div className="flex items-center gap-1 min-w-0">
                                         <Compass className="w-2.5 h-2.5 shrink-0" />
@@ -785,6 +828,25 @@ export const MemberList: React.FC<MemberListProps> = ({ members, onAddMember, on
                                         <div className="space-y-0.5">
                                           <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">{t.phone}</p>
                                           <p className="text-sm text-slate-600 font-medium leading-tight">{member.phone}</p>
+                                        </div>
+                                      </div>
+                                    )}
+                                    {cleanInstagramHandle(member.instagram) && (
+                                      <div className="flex items-start gap-3">
+                                        <div className="w-8 h-8 rounded-xl bg-pink-50 flex items-center justify-center shrink-0">
+                                          <Instagram className="w-4 h-4 text-pink-500" />
+                                        </div>
+                                        <div className="space-y-0.5">
+                                          <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">{t.instagram}</p>
+                                          <a
+                                            href={`https://instagram.com/${cleanInstagramHandle(member.instagram)}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            onClick={(e) => e.stopPropagation()}
+                                            className="text-sm text-pink-600 hover:text-pink-800 hover:underline font-medium leading-tight flex items-center gap-1"
+                                          >
+                                            @{cleanInstagramHandle(member.instagram)}
+                                          </a>
                                         </div>
                                       </div>
                                     )}
