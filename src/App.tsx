@@ -11,7 +11,7 @@ import { Language, translations } from './translations';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from './lib/utils';
 import { auth, db } from './lib/firebase';
-import { doc, onSnapshot, setDoc, getDoc } from 'firebase/firestore';
+import { doc, onSnapshot, setDoc, getDoc, updateDoc, arrayUnion, arrayRemove, query, collection } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 
 export default function App() {
