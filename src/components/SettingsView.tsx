@@ -95,7 +95,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       attendanceRecords,
       gpsGroups,
       exportedAt: new Date().toISOString(),
-      version: '2.0'
+      version: typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '2.38.0'
     };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -546,7 +546,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       </div>
       
       <div className="text-center mt-8 pb-4">
-        <p className="text-xs font-bold text-slate-400 dark:text-slate-600 uppercase tracking-widest">Passion Manager v2.0.0</p>
+        <p className="text-xs font-bold text-slate-400 dark:text-slate-600 uppercase tracking-widest">Passion Manager v{__APP_VERSION__}</p>
       </div>
     </div>
   );

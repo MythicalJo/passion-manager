@@ -44,7 +44,25 @@ export default defineConfig(({mode}) => {
       })
     ],
     define: {
+      __APP_VERSION__: JSON.stringify(process.env.npm_package_version || '2.38.0'),
       'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
+    },
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (id.includes('node_modules/firebase') || id.includes('node_modules/@firebase')) {
+              return 'firebase';
+            }
+            if (id.includes('node_modules/lucide-react')) {
+              return 'icons';
+            }
+            if (id.includes('node_modules/react') || id.includes('node_modules/react-dom')) {
+              return 'react-vendor';
+            }
+          },
+        },
+      },
     },
     resolve: {
       alias: {

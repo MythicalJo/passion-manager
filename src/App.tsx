@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Calendar as CalendarIcon, ClipboardCheck, History, Settings, BarChart3 } from 'lucide-react';
+import { Users, Calendar as CalendarIcon, ClipboardCheck, History, Settings, BarChart3, RefreshCw, X as CloseIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { Member, AttendanceRecord, ViewMode } from './types';
 import { Calendar } from './components/Calendar';
@@ -10,6 +10,7 @@ import { SettingsView } from './components/SettingsView';
 import { Language, translations } from './translations';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from './lib/utils';
+import { registerSW } from 'virtual:pwa-register';
 import { auth, db, getStateDocRef, getAttendanceDocRef, attendanceCollectionRef, subscribeToAttendance, migrateLegacyAttendanceIfNeeded } from './lib/firebase';
 import { onSnapshot, setDoc, getDoc, updateDoc, deleteDoc, getDocs, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -21,12 +22,27 @@ export default function App() {
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
   const [gpsGroups, setGpsGroups] = useState<string[]>([]);
   const [language, setLanguage] = useState<Language>('es');
+  const [needRefresh, setNeedRefresh] = useState(false);
+  const [updateServiceWorker, setUpdateServiceWorker] = useState<((reloadPage?: boolean) => Promise<void>) | null>(null);
   const [isDark, setIsDark] = useState<boolean>(() => {
     const saved = localStorage.getItem('yg_theme');
     return saved === 'dark';
   });
 
   const t = translations[language];
+
+  // PWA Service Worker Registration & Update Listener
+  useEffect(() => {
+    const update = registerSW({
+      onNeedRefresh() {
+        setNeedRefresh(true);
+      },
+      onOfflineReady() {
+        // App is ready for offline usage
+      },
+    });
+    setUpdateServiceWorker(() => update);
+  }, []);
 
   // Apply dark class to <html> on mount and whenever isDark changes
   useEffect(() => {
@@ -500,6 +516,56 @@ export default function App() {
           </AnimatePresence>
         </div>
       </main>
+
+      {/* PWA Update Reload Banner */}
+      <AnimatePresence>
+        {needRefresh && (
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 50 }}
+            transition={{ duration: 0.2 }}
+            role="alert"
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[200] max-w-md w-[92vw] sm:w-auto bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 px-4 py-3 rounded-2xl shadow-2xl border border-indigo-200 dark:border-indigo-900/80 flex items-center justify-between gap-4"
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-950/80 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+                <RefreshCw className="w-4 h-4 animate-spin-slow" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs font-bold truncate">
+                  {t.updateAvailable}
+                </p>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                  {t.updateAvailableDesc}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => {
+                  if (updateServiceWorker) {
+                    updateServiceWorker(true);
+                  }
+                }}
+                className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-md shadow-indigo-200 dark:shadow-indigo-950 transition-colors flex items-center gap-1.5 cursor-pointer"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                <span>{t.reload}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setNeedRefresh(false)}
+                className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+                title={t.dismiss}
+              >
+                <CloseIcon className="w-4 h-4" />
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

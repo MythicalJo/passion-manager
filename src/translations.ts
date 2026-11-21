@@ -168,6 +168,10 @@ export const translations = {
     clearStep5Button: 'Permanently Delete Everything',
     stepOf: 'Step {step} of 5',
     continueBtn: 'Continue',
+    updateAvailable: 'Update Available',
+    updateAvailableDesc: 'A new version is ready. Reload to update.',
+    reload: 'Reload',
+    dismiss: 'Dismiss',
   },
   es: {
     attendance: 'Asistencia',
@@ -336,5 +340,9 @@ export const translations = {
     clearStep5Button: 'Eliminar Todo Permanentemente',
     stepOf: 'Paso {step} de 5',
     continueBtn: 'Continuar',
+    updateAvailable: 'Actualización disponible',
+    updateAvailableDesc: 'Una nueva versión está lista. Actualiza la aplicación.',
+    reload: 'Actualizar',
+    dismiss: 'Cerrar',
   }
 };
