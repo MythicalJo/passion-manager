@@ -9,6 +9,10 @@ export interface SyncData {
   updatedAt?: string;
 }
 
+export const sanitizeForFirestore = <T>(data: T): T => {
+  return JSON.parse(JSON.stringify(data));
+};
+
 export const getStateDocRef = () => doc(db, 'groups', 'main', 'data', 'state');
 
 export const subscribeToAuth = (callback: (user: User | null) => void) => {
@@ -38,11 +42,12 @@ export const syncToCloud = async (data: SyncData): Promise<boolean> => {
   if (!auth.currentUser) return false;
   try {
     const docRef = getStateDocRef();
-    await setDoc(docRef, {
+    const payload = sanitizeForFirestore({
       members: data.members,
       attendanceRecords: data.attendanceRecords,
       updatedAt: data.updatedAt || new Date().toISOString()
-    }, { merge: true });
+    });
+    await setDoc(docRef, payload, { merge: true });
     lastSyncDate = new Date().toISOString();
     lastError = 'None';
     return true;
@@ -76,11 +81,12 @@ export const listenToCloud = (onDataUpdate: (data: SyncData) => void): (() => vo
         const localMembers: Member[] = localMembersStr ? JSON.parse(localMembersStr) : [];
         const localAttendance: AttendanceRecord[] = localAttendanceStr ? JSON.parse(localAttendanceStr) : [];
 
-        await setDoc(docRef, {
+        const seedPayload = sanitizeForFirestore({
           members: localMembers,
           attendanceRecords: localAttendance,
           updatedAt: new Date().toISOString()
-        }, { merge: true });
+        });
+        await setDoc(docRef, seedPayload, { merge: true });
       }
     } catch (e: any) {
       console.warn('Initial check/seed doc error:', e);
