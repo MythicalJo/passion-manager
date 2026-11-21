@@ -10,12 +10,14 @@ export interface Member {
   address?: string;
   phone?: string;
   instagram?: string;
+  invitedBy?: string;
   isGpsMember?: boolean;
   gpsName?: string;
   occupation?: 'none' | 'studying' | 'working' | 'both';
   occupationTime?: 'morning' | 'night' | 'both' | 'none';
   isEvangelized?: boolean;
   evangelizado?: boolean;
+  evangelizadoDate?: string; // ISO date string (YYYY-MM-DD)
   isArchived?: boolean;
   isStaff?: boolean;
   ministry?: string;

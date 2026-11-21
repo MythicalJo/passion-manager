@@ -44,7 +44,7 @@ export default defineConfig(({mode}) => {
       })
     ],
     define: {
-      __APP_VERSION__: JSON.stringify(process.env.npm_package_version || '2.38.0'),
+      __APP_VERSION__: JSON.stringify(process.env.VITE_APP_VERSION || process.env.npm_package_version || '2.38.0'),
       'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
     },
     build: {

@@ -1,7 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   Users, TrendingUp, AlertCircle, Calendar, CheckCircle2, Compass, X, XCircle, 
-  Shield, Baby, GraduationCap, Instagram, Gift, Plus, Trash2, BarChart2, Sparkles, UserPlus 
+  Shield, Baby, GraduationCap, Instagram, Gift, Plus, Trash2, BarChart3, Sparkles, MessageCircle 
 } from 'lucide-react';
 import { Member, AttendanceRecord } from '../types';
 import { Language, translations } from '../translations';
@@ -18,6 +18,12 @@ const cleanInstagramHandle = (input?: string): string | undefined => {
   handle = handle.split('?')[0].split('#')[0];
   handle = handle.replace(/^@+/, '').replace(/\/+$/, '').trim();
   return handle || undefined;
+};
+
+const getWhatsAppUrl = (phone?: string): string | undefined => {
+  if (!phone) return undefined;
+  const digits = phone.replace(/\D/g, '');
+  return digits ? `https://wa.me/${digits}` : undefined;
 };
 
 type Timeframe = '2W' | '1M' | '3M' | '6M' | '1Y';
@@ -44,21 +50,51 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
   const t = translations[language];
   const locale = language === 'es' ? es : enUS;
 
-  const [subTab, setSubTab] = useState<'insights' | 'gps'>('insights');
+  const [subTab, setSubTab] = useState<'insights' | 'gps' | 'evangelismo'>('insights');
   const [expandedStat, setExpandedStat] = useState<'evangelism' | 'gps' | 'staff' | 'adults' | 'teens' | null>(null);
 
   // Growth chart states
   const [showChart, setShowChart] = useState(false);
   const [chartTimeframe, setChartTimeframe] = useState<Timeframe>('1M');
+  const [selectedChartPoint, setSelectedChartPoint] = useState<number | null>(null);
 
   // Interactive Evangelizado & GPS states
   const [memberToEvangelize, setMemberToEvangelize] = useState<Member | null>(null);
+  const [evangelizadoDateInput, setEvangelizadoDateInput] = useState<string>(() => format(new Date(), 'yyyy-MM-dd'));
+  const [evangelismFilter, setEvangelismFilter] = useState<'all' | 'thisMonth'>('all');
   const [memberToAssignGps, setMemberToAssignGps] = useState<Member | null>(null);
   const [selectedGpsToAssign, setSelectedGpsToAssign] = useState<string>('');
 
   // GPS group management in subtab
   const [newGroupName, setNewGroupName] = useState('');
-  const [groupToDelete, setGroupToDelete] = useState<string | null>(null);
+
+  // Lock background scroll whenever any modal/overlay is open
+  const hasOpenModal = Boolean(expandedStat || memberToEvangelize || memberToAssignGps);
+  useEffect(() => {
+    if (!hasOpenModal) return;
+    const prevBodyOverflow = document.body.style.overflow;
+    const prevHtmlOverflow = document.documentElement.style.overflow;
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prevBodyOverflow;
+      document.documentElement.style.overflow = prevHtmlOverflow;
+    };
+  }, [hasOpenModal]);
+
+  const openEvangelizeModal = (member: Member) => {
+    setEvangelizadoDateInput(member.evangelizadoDate || format(new Date(), 'yyyy-MM-dd'));
+    setMemberToEvangelize(member);
+  };
+
+  const formatShortDate = (dateStr?: string, pattern = 'd MMM yyyy'): string | null => {
+    if (!dateStr) return null;
+    try {
+      return format(parseISO(dateStr), pattern, { locale });
+    } catch {
+      return dateStr;
+    }
+  };
 
   const calculateAge = (birthday?: string) => {
     if (!birthday) return null;
@@ -104,17 +140,27 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
   const sortedRecords = useMemo(() => {
     return [...attendanceRecords].sort((a, b) => b.date.localeCompare(a.date));
   }, [attendanceRecords]);
+
+  // Map each member ID to their most recent attendance date (YYYY-MM-DD)
+  const lastAttendanceByMember = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const record of sortedRecords) {
+      for (const memberId of record.presentMemberIds) {
+        if (!map.has(memberId)) {
+          map.set(memberId, record.date);
+        }
+      }
+    }
+    return map;
+  }, [sortedRecords]);
   
   // Find members who haven't attended in the last 2 weeks (14 days)
   // Never-Attended Rule: Members with 0 total attendance records are NEVER flagged as at-risk
   // (only flag members who have attended at least 1 meeting previously AND whose last attended date was 14+ days ago)
   const missingMembers = members.filter(member => {
     if (member.isArchived) return false;
-    const attendedRecords = attendanceRecords.filter(r => r.presentMemberIds.includes(member.id));
-    if (attendedRecords.length === 0) return false;
-
-    const sortedAttended = [...attendedRecords].sort((a, b) => b.date.localeCompare(a.date));
-    const lastAttendedDate = sortedAttended[0].date;
+    const lastAttendedDate = lastAttendanceByMember.get(member.id);
+    if (!lastAttendedDate) return false;
 
     try {
       const daysSinceLastAttended = differenceInDays(now, parseISO(lastAttendedDate));
@@ -144,11 +190,48 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
   const activeLastMonth = getUniqueAttendees(lastMonthAttendance);
   const growth = activeThisMonth - activeLastMonth;
 
-  const activeMembers = members.filter(m => !m.isArchived);
+  const activeMembers = useMemo(() => members.filter(m => !m.isArchived), [members]);
   const totalActiveReach = activeMembers.length;
 
   const gpsMembersCount = activeMembers.filter(m => m.isGpsMember).length;
-  const evangelizedMembersCount = activeMembers.filter(m => m.isEvangelized || m.evangelizado).length;
+  const evangelizedMembers = useMemo(() => {
+    return activeMembers
+      .filter(m => m.isEvangelized || m.evangelizado)
+      .sort((a, b) => {
+        if (a.evangelizadoDate && b.evangelizadoDate) {
+          const cmp = b.evangelizadoDate.localeCompare(a.evangelizadoDate);
+          if (cmp !== 0) return cmp;
+        } else if (a.evangelizadoDate) {
+          return -1;
+        } else if (b.evangelizadoDate) {
+          return 1;
+        }
+        return a.name.localeCompare(b.name);
+      });
+  }, [activeMembers]);
+
+  const evangelizedThisMonth = useMemo(() => {
+    const today = new Date();
+    const currentYear = today.getFullYear();
+    const currentMonth = today.getMonth();
+    return evangelizedMembers.filter(m => {
+      if (!m.evangelizadoDate) return false;
+      try {
+        const d = parseISO(m.evangelizadoDate);
+        return d.getFullYear() === currentYear && d.getMonth() === currentMonth;
+      } catch {
+        return false;
+      }
+    });
+  }, [evangelizedMembers]);
+
+  const notEvangelizedMembers = useMemo(() => {
+    return activeMembers
+      .filter(m => !m.isEvangelized && !m.evangelizado)
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [activeMembers]);
+
+  const evangelizedMembersCount = evangelizedMembers.length;
   const staffCount = activeMembers.filter(m => m.isStaff).length;
   
   const adultMembers = activeMembers.filter(m => {
@@ -161,7 +244,7 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
     return age !== null && age <= 17;
   });
 
-  // Growth chart calculations
+  // Growth chart calculations: total attendance per recorded date within selected timeframe
   const chartData = useMemo(() => {
     const daysMap: Record<Timeframe, number> = {
       '2W': 14,
@@ -171,10 +254,12 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
       '1Y': 365,
     };
     const daysLimit = daysMap[chartTimeframe];
+    const today = new Date();
     const filtered = sortedRecords
       .filter(r => {
+        if (r.presentMemberIds.length === 0) return false;
         try {
-          const days = differenceInDays(now, parseISO(r.date));
+          const days = differenceInDays(today, parseISO(r.date));
           return days >= 0 && days <= daysLimit;
         } catch { return false; }
       })
@@ -252,7 +337,7 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
     }
 
     return (
-      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm overscroll-contain">
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -285,7 +370,7 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
               </div>
               <div className="space-y-2">
                 {completedMembers.length === 0 ? (
-                  <p className="text-sm text-slate-400 italic">No members found.</p>
+                  <p className="text-sm text-slate-400 italic">{t.noMembersFound}</p>
                 ) : (
                   completedMembers.map(m => (
                     <div 
@@ -294,11 +379,13 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
                         if (expandedStat === 'gps') {
                           setSelectedGpsToAssign(m.gpsName || (gpsGroups[0] || ''));
                           setMemberToAssignGps(m);
+                        } else if (expandedStat === 'evangelism') {
+                          openEvangelizeModal(m);
                         }
                       }}
                       className={cn(
                         "flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-xl border gap-1 transition-all",
-                        expandedStat === 'gps' && "cursor-pointer hover:border-indigo-300 dark:hover:border-indigo-700 hover:shadow-sm",
+                        (expandedStat === 'gps' || expandedStat === 'evangelism') && "cursor-pointer hover:border-indigo-300 dark:hover:border-indigo-700 hover:shadow-sm",
                         isDemographicModal ? "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 shadow-sm" : "bg-emerald-50/50 dark:bg-emerald-950/40 border-emerald-100/50 dark:border-emerald-900/40"
                       )}
                     >
@@ -306,6 +393,11 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
                       {expandedStat === 'gps' && m.gpsName && (
                         <span className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 px-2 py-1 rounded-md max-w-full truncate">
                           {m.gpsName}
+                        </span>
+                      )}
+                      {expandedStat === 'evangelism' && (
+                        <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-100/70 dark:bg-emerald-950/60 px-2 py-1 rounded-md max-w-full truncate">
+                          {formatShortDate(m.evangelizadoDate) || t.noDateRecorded}
                         </span>
                       )}
                       {expandedStat === 'staff' && m.ministry && (
@@ -330,14 +422,14 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
                 </div>
                 <div className="space-y-2">
                   {missingMembersList.length === 0 ? (
-                    <p className="text-sm text-slate-400 italic">No members found.</p>
+                    <p className="text-sm text-slate-400 italic">{t.noMembersFound}</p>
                   ) : (
                     missingMembersList.map(m => (
                       <div 
                         key={m.id} 
                         onClick={() => {
                           if (expandedStat === 'evangelism') {
-                            setMemberToEvangelize(m);
+                            openEvangelizeModal(m);
                           } else if (expandedStat === 'gps') {
                             setSelectedGpsToAssign(gpsGroups[0] || '');
                             setMemberToAssignGps(m);
@@ -375,57 +467,97 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
         {renderStatModal()}
       </AnimatePresence>
 
-      {/* Confirmation Modal: Mark as Evangelizado */}
+      {/* Confirmation / Edit Date Modal: Mark as Evangelizado */}
       <AnimatePresence>
-        {memberToEvangelize && (
-          <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95 }} 
-              animate={{ opacity: 1, scale: 1 }} 
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white dark:bg-slate-900 rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-slate-100 dark:border-slate-800 space-y-4"
-            >
-              <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto">
-                <CheckCircle2 className="w-6 h-6" />
-              </div>
-              <div className="text-center">
-                <h4 className="text-lg font-black text-slate-800 dark:text-slate-100">{t.confirmEvangelizadoTitle}</h4>
-                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                  {t.confirmEvangelizadoDesc.replace('{name}', memberToEvangelize.name)}
-                </p>
-              </div>
-              <div className="flex justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setMemberToEvangelize(null)}
-                  className="px-4 py-2 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 font-bold text-sm transition-colors"
-                >
-                  {t.cancel}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    onUpdateMember?.({
-                      ...memberToEvangelize,
-                      isEvangelized: true,
-                      evangelizado: true,
-                    });
-                    setMemberToEvangelize(null);
-                  }}
-                  className="px-4 py-2 rounded-xl bg-emerald-600 text-white font-bold text-sm shadow-md hover:bg-emerald-700 transition-colors"
-                >
-                  {t.markEvangelizado}
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
+        {memberToEvangelize && (() => {
+          const isAlreadyEvangelized = Boolean(memberToEvangelize.isEvangelized || memberToEvangelize.evangelizado);
+          return (
+            <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm overscroll-contain">
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95 }} 
+                animate={{ opacity: 1, scale: 1 }} 
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="bg-white dark:bg-slate-900 rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-slate-100 dark:border-slate-800 space-y-4"
+              >
+                <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto">
+                  <CheckCircle2 className="w-6 h-6" />
+                </div>
+                <div className="text-center">
+                  <h4 className="text-lg font-black text-slate-800 dark:text-slate-100">
+                    {isAlreadyEvangelized ? t.editEvangelizadoDate : t.confirmEvangelizadoTitle}
+                  </h4>
+                  <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                    {isAlreadyEvangelized
+                      ? memberToEvangelize.name
+                      : t.confirmEvangelizadoDesc.replace('{name}', memberToEvangelize.name)}
+                  </p>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                    {t.evangelizedDateLabel}
+                  </label>
+                  <input
+                    type="date"
+                    value={evangelizadoDateInput}
+                    onChange={(e) => setEvangelizadoDateInput(e.target.value)}
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 font-medium text-slate-700 dark:text-slate-200 bg-slate-50 dark:bg-slate-800 focus:bg-white dark:focus:bg-slate-700 focus:ring-2 focus:ring-emerald-500/20 outline-none text-sm"
+                  />
+                </div>
+
+                <div className="flex items-center justify-between gap-2 pt-2">
+                  {isAlreadyEvangelized ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onUpdateMember?.({
+                          ...memberToEvangelize,
+                          isEvangelized: false,
+                          evangelizado: false,
+                          evangelizadoDate: undefined,
+                        });
+                        setMemberToEvangelize(null);
+                      }}
+                      className="px-3 py-2 rounded-xl text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/60 font-bold text-xs transition-colors"
+                    >
+                      {t.removeEvangelizado}
+                    </button>
+                  ) : <span />}
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setMemberToEvangelize(null)}
+                      className="px-4 py-2 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 font-bold text-sm transition-colors"
+                    >
+                      {t.cancel}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onUpdateMember?.({
+                          ...memberToEvangelize,
+                          isEvangelized: true,
+                          evangelizado: true,
+                          evangelizadoDate: evangelizadoDateInput || format(new Date(), 'yyyy-MM-dd'),
+                        });
+                        setMemberToEvangelize(null);
+                      }}
+                      className="px-4 py-2 rounded-xl bg-emerald-600 text-white font-bold text-sm shadow-md hover:bg-emerald-700 transition-colors"
+                    >
+                      {isAlreadyEvangelized ? t.save : t.markEvangelizado}
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+          );
+        })()}
       </AnimatePresence>
 
       {/* Modal: Assign GPS Group */}
       <AnimatePresence>
         {memberToAssignGps && (
-          <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+          <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm overscroll-contain">
             <motion.div 
               initial={{ opacity: 0, scale: 0.95 }} 
               animate={{ opacity: 1, scale: 1 }} 
@@ -518,7 +650,7 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
           <p className="text-slate-500 dark:text-slate-400 text-sm">{t.communityDesc}</p>
         </div>
 
-        <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1.5 rounded-2xl w-fit">
+        <div className="flex flex-wrap items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1.5 rounded-2xl w-fit">
           <button
             type="button"
             onClick={() => setSubTab('insights')}
@@ -546,6 +678,24 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
             {gpsGroups.length > 0 && (
               <span className="px-1.5 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950 text-[10px] text-indigo-600 dark:text-indigo-400">
                 {gpsGroups.length}
+              </span>
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={() => setSubTab('evangelismo')}
+            className={cn(
+              "px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5",
+              subTab === 'evangelismo' 
+                ? "bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-sm" 
+                : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+            )}
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            {t.evangelismTab}
+            {evangelizedMembersCount > 0 && (
+              <span className="px-1.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950 text-[10px] text-emerald-600 dark:text-emerald-400">
+                {evangelizedMembersCount}
               </span>
             )}
           </button>
@@ -621,7 +771,7 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
 
                       <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
                         {groupMembers.length === 0 ? (
-                          <p className="text-xs text-slate-400 italic py-2">No members in this GPS group yet.</p>
+                          <p className="text-xs text-slate-400 italic py-2">{t.noMembersInGps}</p>
                         ) : (
                           groupMembers.map(m => {
                             const cleanHandle = cleanInstagramHandle(m.instagram);
@@ -702,6 +852,155 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
             </div>
           </div>
         </div>
+      ) : subTab === 'evangelismo' ? (
+        /* Evangelismo Sub-Tab */
+        <div className="space-y-6">
+          {/* Summary Stat Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div className="bg-emerald-600 rounded-[2rem] p-6 text-white shadow-xl shadow-emerald-100 dark:shadow-emerald-950/60 relative overflow-hidden">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="p-2 bg-white/15 rounded-lg">
+                  <Sparkles className="w-5 h-5" />
+                </div>
+                <span className="text-xs font-bold uppercase tracking-widest opacity-90">{t.sharedThisMonth}</span>
+              </div>
+              <p className="text-5xl font-black mb-1">{evangelizedThisMonth.length}</p>
+              <p className="text-emerald-100 text-xs font-medium capitalize">
+                {format(now, 'MMMM yyyy', { locale })}
+              </p>
+            </div>
+
+            <div className="bg-white dark:bg-slate-900 rounded-[2rem] p-6 border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col justify-between">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="p-2 bg-emerald-50 dark:bg-emerald-950/60 rounded-lg">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                </div>
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">{t.totalEvangelized}</span>
+              </div>
+              <div>
+                <p className="text-5xl font-black text-slate-900 dark:text-slate-100 mb-1">
+                  {evangelizedMembersCount}
+                  <span className="text-lg font-bold text-slate-400">/{totalActiveReach}</span>
+                </p>
+                <p className="text-slate-400 text-xs font-medium">{t.areEvangelized}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Evangelized Members List with Filter */}
+          <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+              <h3 className="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                {t.evangelizedStats}
+              </h3>
+              <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl w-fit">
+                <button
+                  type="button"
+                  onClick={() => setEvangelismFilter('thisMonth')}
+                  className={cn(
+                    "px-3 py-1.5 rounded-lg text-xs font-bold transition-all",
+                    evangelismFilter === 'thisMonth'
+                      ? "bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-sm"
+                      : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+                  )}
+                >
+                  {t.thisMonth} ({evangelizedThisMonth.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEvangelismFilter('all')}
+                  className={cn(
+                    "px-3 py-1.5 rounded-lg text-xs font-bold transition-all",
+                    evangelismFilter === 'all'
+                      ? "bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-sm"
+                      : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+                  )}
+                >
+                  {t.allTime} ({evangelizedMembersCount})
+                </button>
+              </div>
+            </div>
+
+            {(() => {
+              const displayedList = evangelismFilter === 'thisMonth' ? evangelizedThisMonth : evangelizedMembers;
+              if (displayedList.length === 0) {
+                return (
+                  <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-8 text-center border border-slate-100 dark:border-slate-800">
+                    <Sparkles className="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
+                    <p className="text-xs font-bold text-slate-500 dark:text-slate-400">
+                      {evangelismFilter === 'thisMonth' ? t.noEvangelizedThisMonth : t.noEvangelizedYet}
+                    </p>
+                  </div>
+                );
+              }
+              return (
+                <div className="space-y-2.5">
+                  {displayedList.map(member => (
+                    <div
+                      key={member.id}
+                      className="flex items-center justify-between gap-3 p-3.5 rounded-2xl bg-emerald-50/40 dark:bg-emerald-950/25 border border-emerald-100/70 dark:border-emerald-900/40"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-9 h-9 rounded-xl bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 flex items-center justify-center font-bold text-xs shrink-0">
+                          {member.name.charAt(0).toUpperCase()}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-bold text-slate-800 dark:text-slate-100 truncate">{member.name}</p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-0.5">
+                            <Calendar className="w-3 h-3 text-emerald-500 shrink-0" />
+                            <span>{formatShortDate(member.evangelizadoDate) || t.noDateRecorded}</span>
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => openEvangelizeModal(member)}
+                        className="px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/60 border border-emerald-200/70 dark:border-emerald-800/60 text-xs font-bold transition-colors shrink-0"
+                      >
+                        {t.edit}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
+          </div>
+
+          {/* Not Yet Evangelized Section */}
+          <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm">
+            <h3 className="text-base font-bold text-slate-800 dark:text-slate-100 mb-4 flex items-center justify-between">
+              <span className="flex items-center gap-2">
+                <Users className="w-5 h-5 text-slate-400" />
+                {t.pendingEvangelism}
+              </span>
+              <span className="text-xs font-bold text-slate-400">
+                {notEvangelizedMembers.length} {t.membersCount}
+              </span>
+            </h3>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+              {notEvangelizedMembers.length === 0 ? (
+                <div className="col-span-full text-center py-4 text-xs text-emerald-600 dark:text-emerald-400 font-bold">
+                  ✓ {t.allEvangelized}
+                </div>
+              ) : (
+                notEvangelizedMembers.map(m => (
+                  <div key={m.id} className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-100 dark:border-slate-700/60">
+                    <span className="text-xs font-bold text-slate-700 dark:text-slate-200 truncate mr-2">{m.name}</span>
+                    <button
+                      type="button"
+                      onClick={() => openEvangelizeModal(m)}
+                      className="px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 font-bold text-[10px] shrink-0 transition-colors"
+                    >
+                      + {t.markEvangelizado}
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
       ) : (
         /* Regular Insights Overview */
         <>
@@ -727,13 +1026,14 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
               <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
                 {upcomingBirthdays.map(({ member, nextBday, daysUntil }) => {
                   const isToday = daysUntil === 0;
+                  const whatsAppUrl = getWhatsAppUrl(member.phone);
                   return (
                     <div
                       key={member.id}
                       className={cn(
                         "flex items-center gap-2 px-3 py-2 rounded-2xl shrink-0 border transition-all text-xs",
                         isToday 
-                          ? "bg-amber-400 text-amber-950 border-amber-500 shadow-md font-bold animate-pulse" 
+                          ? "bg-amber-400 text-amber-950 border-amber-500 shadow-md font-bold" 
                           : "bg-white/90 dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 border-amber-100 dark:border-amber-900/50 shadow-sm"
                       )}
                     >
@@ -749,6 +1049,24 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
                         <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 px-1.5 py-0.5 rounded-md">
                           {daysUntil}d
                         </span>
+                      )}
+                      {whatsAppUrl && (
+                        <a
+                          href={whatsAppUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          aria-label={`WhatsApp ${member.name}`}
+                          title={`WhatsApp ${member.name}`}
+                          className={cn(
+                            "p-1 rounded-full transition-colors flex items-center justify-center shrink-0",
+                            isToday
+                              ? "bg-emerald-600 text-white hover:bg-emerald-700"
+                              : "bg-emerald-50 dark:bg-emerald-950/70 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/70"
+                          )}
+                        >
+                          <MessageCircle className="w-3.5 h-3.5" />
+                        </a>
                       )}
                     </div>
                   );
@@ -770,14 +1088,20 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
                     <span className="text-xs font-bold uppercase tracking-widest opacity-80">{t.activeGrowth}</span>
                   </div>
 
-                  {/* Toggle Growth Chart Button */}
+                  {/* Toggle Growth Chart Icon Button */}
                   <button
                     type="button"
                     onClick={() => setShowChart(!showChart)}
-                    className="text-xs bg-white/15 hover:bg-white/25 text-white font-bold px-3 py-1.5 rounded-xl transition-colors flex items-center gap-1.5 backdrop-blur-sm cursor-pointer"
+                    aria-label={showChart ? t.hideChart : t.showChart}
+                    title={showChart ? t.hideChart : t.showChart}
+                    className={cn(
+                      "p-2 rounded-xl transition-colors backdrop-blur-sm cursor-pointer flex items-center justify-center",
+                      showChart
+                        ? "bg-white text-indigo-700 shadow-sm"
+                        : "bg-white/15 hover:bg-white/25 text-white"
+                    )}
                   >
-                    <BarChart2 className="w-3.5 h-3.5" />
-                    {showChart ? t.hideChart : t.showChart}
+                    <BarChart3 className="w-4 h-4" />
                   </button>
                 </div>
 
@@ -806,17 +1130,28 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
                       exit={{ opacity: 0, height: 0 }}
                       className="overflow-hidden mt-6 pt-5 border-t border-white/15"
                     >
-                      {/* Timeframe Pills */}
-                      <div className="flex items-center justify-between mb-3">
-                        <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-200">
-                          {t.growthChart}
-                        </span>
+                      {/* Metric Label & Timeframe Pills */}
+                      <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                        <div>
+                          <span className="text-[11px] font-bold uppercase tracking-wider text-white block">
+                            {t.attendancePerDate}
+                          </span>
+                          {chartData.length > 0 && (
+                            <span className="text-[10px] text-indigo-200 font-medium">
+                              {chartData.length} {t.sessionsCount} · {t.averageShort}:{' '}
+                              {Math.round(chartData.reduce((acc, d) => acc + d.count, 0) / chartData.length)}
+                            </span>
+                          )}
+                        </div>
                         <div className="flex items-center gap-1 bg-white/10 p-1 rounded-xl">
                           {(['2W', '1M', '3M', '6M', '1Y'] as Timeframe[]).map(tf => (
                             <button
                               key={tf}
                               type="button"
-                              onClick={() => setChartTimeframe(tf)}
+                              onClick={() => {
+                                setChartTimeframe(tf);
+                                setSelectedChartPoint(null);
+                              }}
                               className={cn(
                                 "px-2 py-0.5 rounded-lg text-[10px] font-bold transition-all",
                                 chartTimeframe === tf 
@@ -836,53 +1171,164 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
                       ) : (
                         <div className="w-full pt-1">
                           {(() => {
-                            const width = 340;
-                            const height = 90;
-                            const padding = 14;
+                            const width = 360;
+                            const height = 128;
+                            const padLeft = 28;
+                            const padRight = 16;
+                            const padTop = 22;
+                            const padBottom = 12;
+                            const plotWidth = width - padLeft - padRight;
+                            const plotHeight = height - padTop - padBottom;
+
                             const counts = chartData.map(d => d.count);
-                            const maxCount = Math.max(...counts, 1);
-                            const minCount = 0;
-                            const range = maxCount - minCount || 1;
+                            const rawMax = Math.max(...counts);
+                            const rawMin = Math.min(...counts);
+                            const yMax = Math.max(rawMax, 1);
+                            const yMin = 0;
+                            const yRange = yMax - yMin || 1;
+                            const midVal = Math.round(yMax / 2);
 
                             const points = chartData.map((d, index) => {
                               const x = chartData.length === 1 
-                                ? width / 2 
-                                : padding + (index / (chartData.length - 1)) * (width - 2 * padding);
-                              const y = height - padding - ((d.count - minCount) / range) * (height - 2 * padding);
+                                ? padLeft + plotWidth / 2 
+                                : padLeft + (index / (chartData.length - 1)) * plotWidth;
+                              const y = padTop + plotHeight - ((d.count - yMin) / yRange) * plotHeight;
                               return { x, y, ...d };
                             });
 
                             const linePath = points.length === 1
-                              ? `M ${points[0].x - 20} ${points[0].y} L ${points[0].x + 20} ${points[0].y}`
+                              ? `M ${points[0].x - 24} ${points[0].y} L ${points[0].x + 24} ${points[0].y}`
                               : points.reduce((acc, p, i) => i === 0 ? `M ${p.x} ${p.y}` : `${acc} L ${p.x} ${p.y}`, '');
 
+                            const baselineY = padTop + plotHeight;
                             const areaPath = points.length === 1
                               ? ''
-                              : `${linePath} L ${points[points.length - 1].x} ${height - padding} L ${points[0].x} ${height - padding} Z`;
+                              : `${linePath} L ${points[points.length - 1].x} ${baselineY} L ${points[0].x} ${baselineY} Z`;
+
+                            // Declutter point value labels when there are many data points
+                            let lastLabeledX = -Infinity;
+                            const minLabelGap = 24;
+                            const showLabelForIndex = points.map((p, idx) => {
+                              if (points.length <= 10) return true;
+                              const isFirst = idx === 0;
+                              const isLast = idx === points.length - 1;
+                              const isExtreme = p.count === rawMax || p.count === rawMin;
+                              if (isFirst || isLast) {
+                                lastLabeledX = p.x;
+                                return true;
+                              }
+                              if ((isExtreme || p.x - lastLabeledX >= minLabelGap) && points[points.length - 1].x - p.x >= minLabelGap && p.x - lastLabeledX >= minLabelGap) {
+                                lastLabeledX = p.x;
+                                return true;
+                              }
+                              return false;
+                            });
+
+                            const datePattern = chartTimeframe === '1Y' ? 'd MMM yy' : 'd MMM';
+                            const activePoint = selectedChartPoint !== null && points[selectedChartPoint]
+                              ? points[selectedChartPoint]
+                              : null;
 
                             return (
                               <div className="relative">
-                                <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-24 overflow-visible">
+                                {activePoint && (
+                                  <div className="flex items-center justify-between text-[11px] bg-white/15 rounded-xl px-2.5 py-1 mb-2">
+                                    <span className="font-semibold text-indigo-100">
+                                      {formatShortDate(activePoint.date, 'd MMM yyyy')}
+                                    </span>
+                                    <span className="font-black text-white">
+                                      {activePoint.count} {t.present}
+                                    </span>
+                                  </div>
+                                )}
+                                <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-32 overflow-visible">
                                   <defs>
                                     <linearGradient id="growthAreaGradient" x1="0" y1="0" x2="0" y2="1">
-                                      <stop offset="0%" stopColor="#ffffff" stopOpacity="0.4" />
-                                      <stop offset="100%" stopColor="#ffffff" stopOpacity="0.0" />
+                                      <stop offset="0%" stopColor="#ffffff" stopOpacity="0.35" />
+                                      <stop offset="100%" stopColor="#ffffff" stopOpacity="0.02" />
                                     </linearGradient>
                                   </defs>
+
+                                  {/* Horizontal Gridlines & Y-Axis Labels (Max, Mid, Min) */}
+                                  <line x1={padLeft} y1={padTop} x2={width - padRight} y2={padTop} stroke="#ffffff" strokeOpacity="0.2" strokeDasharray="3 3" />
+                                  <text x={padLeft - 6} y={padTop + 3} textAnchor="end" fill="#e0e7ff" fontSize="9" fontWeight="700">
+                                    {yMax}
+                                  </text>
+
+                                  {yMax >= 2 && (
+                                    <>
+                                      <line x1={padLeft} y1={padTop + plotHeight / 2} x2={width - padRight} y2={padTop + plotHeight / 2} stroke="#ffffff" strokeOpacity="0.14" strokeDasharray="3 3" />
+                                      <text x={padLeft - 6} y={padTop + plotHeight / 2 + 3} textAnchor="end" fill="#c7d2fe" fontSize="9" fontWeight="600">
+                                        {midVal}
+                                      </text>
+                                    </>
+                                  )}
+
+                                  <line x1={padLeft} y1={baselineY} x2={width - padRight} y2={baselineY} stroke="#ffffff" strokeOpacity="0.35" />
+                                  <text x={padLeft - 6} y={baselineY + 3} textAnchor="end" fill="#e0e7ff" fontSize="9" fontWeight="700">
+                                    {yMin}
+                                  </text>
+
+                                  {/* Area & Line */}
                                   {areaPath && (
                                     <path d={areaPath} fill="url(#growthAreaGradient)" />
                                   )}
                                   <path d={linePath} fill="none" stroke="#ffffff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                                  {points.map((p, idx) => (
-                                    <g key={idx}>
-                                      <circle cx={p.x} cy={p.y} r="3.5" fill="#ffffff" />
-                                      <title>{`${p.date}: ${p.count} ${t.present}`}</title>
-                                    </g>
-                                  ))}
+
+                                  {/* Visible Data Points with Exact Count Labels */}
+                                  {points.map((p, idx) => {
+                                    const isSelected = selectedChartPoint === idx;
+                                    const showValue = isSelected || showLabelForIndex[idx];
+                                    return (
+                                      <g
+                                        key={p.date}
+                                        onClick={() => setSelectedChartPoint(isSelected ? null : idx)}
+                                        className="cursor-pointer"
+                                      >
+                                        <circle cx={p.x} cy={p.y} r="10" fill="transparent" />
+                                        <circle
+                                          cx={p.x}
+                                          cy={p.y}
+                                          r={isSelected ? "5.5" : "4"}
+                                          fill="#ffffff"
+                                          stroke="#4338ca"
+                                          strokeWidth="1.5"
+                                        />
+                                        {showValue && (
+                                          <text
+                                            x={p.x}
+                                            y={p.y - 8}
+                                            textAnchor="middle"
+                                            fill="#ffffff"
+                                            fontSize="10"
+                                            fontWeight="800"
+                                          >
+                                            {p.count}
+                                          </text>
+                                        )}
+                                        <title>{`${formatShortDate(p.date, 'd MMM yyyy')}: ${p.count} ${t.present}`}</title>
+                                      </g>
+                                    );
+                                  })}
                                 </svg>
-                                <div className="flex justify-between items-center text-[9px] font-bold text-indigo-200 mt-1 px-1">
-                                  <span>{chartData[0].date}</span>
-                                  <span>{chartData[chartData.length - 1].date} ({chartData[chartData.length - 1].count} {t.present})</span>
+
+                                {/* X-Axis Start / Mid / End Date Labels */}
+                                <div className="flex justify-between items-center text-[10px] font-bold text-indigo-100 mt-1 pl-7 pr-2">
+                                  {chartData.length === 1 ? (
+                                    <span className="mx-auto">
+                                      {formatShortDate(chartData[0].date, datePattern)} ({chartData[0].count} {t.present})
+                                    </span>
+                                  ) : (
+                                    <>
+                                      <span>{formatShortDate(chartData[0].date, datePattern)}</span>
+                                      {chartData.length >= 3 && (
+                                        <span className="text-indigo-200/80">
+                                          {formatShortDate(chartData[Math.floor(chartData.length / 2)].date, datePattern)}
+                                        </span>
+                                      )}
+                                      <span>{formatShortDate(chartData[chartData.length - 1].date, datePattern)}</span>
+                                    </>
+                                  )}
                                 </div>
                               </div>
                             );
@@ -945,31 +1391,18 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
             </button>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-            <button 
-              type="button"
-              onClick={() => setExpandedStat('staff')}
-              className="bg-white dark:bg-slate-900 rounded-[2rem] p-6 border border-slate-100 dark:border-slate-800 shadow-sm flex items-center sm:flex-col gap-4 hover:border-purple-300 dark:hover:border-purple-700 hover:shadow-md transition-all text-left sm:text-center outline-none group cursor-pointer"
-            >
-              <div className="w-12 h-12 rounded-2xl bg-purple-50 dark:bg-purple-950/60 flex items-center justify-center shrink-0 group-hover:bg-purple-100 dark:group-hover:bg-purple-900/60 transition-colors">
-                <Shield className="w-6 h-6 text-purple-500 group-hover:scale-110 transition-transform" />
-              </div>
-              <div>
-                <p className="text-3xl font-black text-slate-800 dark:text-slate-100 mb-1">{staffCount}</p>
-                <p className="text-xs font-black text-slate-400 uppercase tracking-widest">{t.staffStats}</p>
-              </div>
-            </button>
-
+          {/* Age Demographics */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <button 
               type="button"
               onClick={() => setExpandedStat('adults')}
-              className="bg-white dark:bg-slate-900 rounded-[2rem] p-6 border border-slate-100 dark:border-slate-800 shadow-sm flex items-center sm:flex-col gap-4 hover:border-blue-300 dark:hover:border-blue-700 hover:shadow-md transition-all text-left sm:text-center outline-none group cursor-pointer"
+              className="bg-white dark:bg-slate-900 rounded-[2rem] p-6 border border-slate-100 dark:border-slate-800 shadow-sm flex items-center gap-4 hover:border-blue-300 dark:hover:border-blue-700 hover:shadow-md transition-all text-left outline-none group cursor-pointer"
             >
               <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-950/60 flex items-center justify-center shrink-0 group-hover:bg-blue-100 dark:group-hover:bg-blue-900/60 transition-colors">
                 <GraduationCap className="w-6 h-6 text-blue-500 group-hover:scale-110 transition-transform" />
               </div>
               <div>
-                <p className="text-3xl font-black text-slate-800 dark:text-slate-100 mb-1">{adultMembers.length}</p>
+                <p className="text-3xl font-black text-slate-800 dark:text-slate-100 mb-0.5">{adultMembers.length}</p>
                 <p className="text-xs font-black text-slate-400 uppercase tracking-widest">{t.adultStats}</p>
               </div>
             </button>
@@ -977,19 +1410,19 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
             <button 
               type="button"
               onClick={() => setExpandedStat('teens')}
-              className="bg-white dark:bg-slate-900 rounded-[2rem] p-6 border border-slate-100 dark:border-slate-800 shadow-sm flex items-center sm:flex-col gap-4 hover:border-pink-300 dark:hover:border-pink-700 hover:shadow-md transition-all text-left sm:text-center outline-none group cursor-pointer"
+              className="bg-white dark:bg-slate-900 rounded-[2rem] p-6 border border-slate-100 dark:border-slate-800 shadow-sm flex items-center gap-4 hover:border-pink-300 dark:hover:border-pink-700 hover:shadow-md transition-all text-left outline-none group cursor-pointer"
             >
               <div className="w-12 h-12 rounded-2xl bg-pink-50 dark:bg-pink-950/60 flex items-center justify-center shrink-0 group-hover:bg-pink-100 dark:group-hover:bg-pink-900/60 transition-colors">
                 <Baby className="w-6 h-6 text-pink-500 group-hover:scale-110 transition-transform" />
               </div>
               <div>
-                <p className="text-3xl font-black text-slate-800 dark:text-slate-100 mb-1">{teenMembers.length}</p>
+                <p className="text-3xl font-black text-slate-800 dark:text-slate-100 mb-0.5">{teenMembers.length}</p>
                 <p className="text-xs font-black text-slate-400 uppercase tracking-widest">{t.teenStats}</p>
               </div>
             </button>
           </div>
 
-          {/* Missing Members Section */}
+          {/* Missing Members / Needs Connection Section */}
           <div className="flex-1 flex flex-col min-h-0">
             <div className="flex items-center justify-between mb-4 px-2">
               <div className="flex items-center gap-2">
@@ -1011,23 +1444,25 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
               ) : (
                 missingMembers.map(member => {
                   const cleanHandle = cleanInstagramHandle(member.instagram);
+                  const whatsAppUrl = getWhatsAppUrl(member.phone);
+                  const lastAttendedDate = lastAttendanceByMember.get(member.id);
                   return (
                     <motion.div
                       key={member.id}
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="flex items-center justify-between p-5 bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm hover:border-amber-100 dark:hover:border-amber-900/50 transition-all"
+                      className="flex items-center justify-between gap-3 p-5 bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm hover:border-amber-100 dark:hover:border-amber-900/50 transition-all"
                     >
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-2xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-400 font-bold">
+                      <div className="flex items-center gap-4 min-w-0">
+                        <div className="w-12 h-12 rounded-2xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-400 font-bold shrink-0">
                           {member.name.charAt(0).toUpperCase()}
                         </div>
-                        <div>
-                          <p className="font-bold text-slate-800 dark:text-slate-100">{member.name}</p>
+                        <div className="min-w-0">
+                          <p className="font-bold text-slate-800 dark:text-slate-100 truncate">{member.name}</p>
                           <div className="flex flex-wrap items-center gap-3 mt-0.5">
                             <span className="text-xs text-slate-400 flex items-center gap-1">
-                              <Calendar className="w-3 h-3" />
-                              {t.joined} {format(parseISO(member.joinDate), 'MMM yyyy', { locale })}
+                              <Calendar className="w-3 h-3 shrink-0" />
+                              {t.lastAttended}: {lastAttendedDate ? formatShortDate(lastAttendedDate) : t.never}
                             </span>
                             {cleanHandle && (
                               <a
@@ -1043,8 +1478,23 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
                           </div>
                         </div>
                       </div>
-                      <div className="px-4 py-2 bg-amber-50 dark:bg-amber-950/60 rounded-2xl">
-                        <span className="text-[10px] font-black text-amber-600 dark:text-amber-400 uppercase tracking-widest">{t.atRisk}</span>
+                      <div className="flex items-center gap-2 shrink-0">
+                        {whatsAppUrl && (
+                          <a
+                            href={whatsAppUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            aria-label={`WhatsApp ${member.name}`}
+                            title={`WhatsApp ${member.name}`}
+                            className="flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 border border-emerald-200/60 dark:border-emerald-800/60 text-xs font-bold transition-colors"
+                          >
+                            <MessageCircle className="w-3.5 h-3.5" />
+                            <span className="hidden sm:inline">WhatsApp</span>
+                          </a>
+                        )}
+                        <div className="px-3.5 py-2 bg-amber-50 dark:bg-amber-950/60 rounded-2xl">
+                          <span className="text-[10px] font-black text-amber-600 dark:text-amber-400 uppercase tracking-widest">{t.atRisk}</span>
+                        </div>
                       </div>
                     </motion.div>
                   );
@@ -1052,6 +1502,28 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
               )}
             </div>
           </div>
+
+          {/* Staff Card (Moved to the Bottom of the Card Stack) */}
+          <button
+            type="button"
+            onClick={() => setExpandedStat('staff')}
+            className="w-full shrink-0 bg-white dark:bg-slate-900 rounded-[2rem] p-6 border border-slate-100 dark:border-slate-800 shadow-sm flex items-center justify-between gap-4 hover:border-purple-300 dark:hover:border-purple-700 hover:shadow-md transition-all text-left outline-none group cursor-pointer"
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-purple-50 dark:bg-purple-950/60 flex items-center justify-center shrink-0 group-hover:bg-purple-100 dark:group-hover:bg-purple-900/60 transition-colors">
+                <Shield className="w-6 h-6 text-purple-500 group-hover:scale-110 transition-transform" />
+              </div>
+              <div>
+                <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-0.5">{t.staffStats}</p>
+                <p className="text-2xl font-black text-slate-800 dark:text-slate-100">
+                  {staffCount} <span className="text-xs font-medium text-slate-400 lowercase">{t.membersCount}</span>
+                </p>
+              </div>
+            </div>
+            <span className="text-xs font-bold text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/60 px-3 py-1.5 rounded-xl">
+              {t.staff}
+            </span>
+          </button>
         </>
       )}
     </div>

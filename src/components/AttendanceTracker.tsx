@@ -1,7 +1,8 @@
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
-import { format, addDays, isSameDay, differenceInDays, parseISO } from 'date-fns';
+import { createPortal } from 'react-dom';
+import { format, differenceInDays, parseISO } from 'date-fns';
 import { enUS, es } from 'date-fns/locale';
-import { Check, X, Users, Calendar as CalendarIcon, Search, ChevronLeft, ChevronRight, UserPlus, Plus } from 'lucide-react';
+import { Check, X, Users, Calendar as CalendarIcon, Search, UserPlus, Plus } from 'lucide-react';
 import { Member, AttendanceRecord } from '../types';
 import { Language, translations } from '../translations';
 import { motion, AnimatePresence } from 'motion/react';
@@ -67,10 +68,6 @@ export const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
       setInternalDate(d);
     }
   };
-
-  const handlePrevDay = () => handleDateChange(addDays(effectiveDate, -1));
-  const handleToday = () => handleDateChange(new Date());
-  const handleNextDay = () => handleDateChange(addDays(effectiveDate, 1));
 
   const allMembers = useMemo(() => {
     if (localMembers.length === 0) return members;
@@ -249,9 +246,9 @@ export const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
   };
 
   const filterOptions = [
-    { id: 'all' as const, label: 'All' },
-    { id: 'present' as const, label: 'Present' },
-    { id: 'absent2Weeks' as const, label: 'Absent 2+ Weeks' },
+    { id: 'all' as const, label: t.filterAll },
+    { id: 'present' as const, label: t.present },
+    { id: 'absent2Weeks' as const, label: t.filterAbsent2Weeks },
   ];
 
   const quickAddText = (t.quickAddMarkPresent || "+ Quick Add '{name}' & Mark Present")
@@ -259,65 +256,33 @@ export const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
 
   return (
     <div className="flex flex-col h-full relative">
-      {/* Header and Compact Horizontal Date Bar */}
+      {/* Header and Calendar Date Picker Toggle */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
         <div>
           <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100">{t.attendance}</h2>
           <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 mt-1">
             <CalendarIcon className="w-4 h-4" />
-            <span className="text-sm font-medium capitalize">{format(effectiveDate, 'EEEE, MMMM do, yyyy', { locale })}</span>
+            <span className="text-sm font-medium capitalize">
+              {format(effectiveDate, isEs ? "EEEE, d 'de' MMMM 'de' yyyy" : 'EEEE, MMMM do, yyyy', { locale })}
+            </span>
           </div>
         </div>
 
-        {/* Compact Horizontal Date Bar & Monthly Calendar Toggle */}
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="inline-flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
-            <button
-              type="button"
-              onClick={handlePrevDay}
-              aria-label="Previous"
-              className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-700 transition-all shadow-sm"
-            >
-              <ChevronLeft className="w-3.5 h-3.5" />
-              <span>&lt; Previous</span>
-            </button>
-            <button
-              type="button"
-              onClick={handleToday}
-              aria-label="Today"
-              className={cn(
-                "px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm",
-                isSameDay(effectiveDate, new Date())
-                  ? "bg-indigo-600 text-white"
-                  : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-700"
-              )}
-            >
-              <span>Today</span>
-            </button>
-            <button
-              type="button"
-              onClick={handleNextDay}
-              aria-label="Next"
-              className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-700 transition-all shadow-sm"
-            >
-              <span>Next &gt;</span>
-              <ChevronRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
-
+        {/* Monthly Calendar Date Picker Toggle */}
+        <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={() => setShowCalendar(prev => !prev)}
-            aria-label="Toggle Calendar"
+            aria-label={t.toggleCalendar}
             className={cn(
-              "flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-bold transition-all",
+              "flex items-center gap-1.5 px-3.5 py-2 rounded-xl border text-xs font-bold transition-all",
               showCalendar 
                 ? "bg-indigo-50 dark:bg-indigo-950/60 border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 shadow-sm" 
                 : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
             )}
           >
             <CalendarIcon className="w-4 h-4" />
-            <span>Calendar</span>
+            <span>{t.calendar}</span>
           </button>
         </div>
       </div>
@@ -490,39 +455,40 @@ export const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
         </div>
       </div>
 
-      {/* Undo Toast (4 seconds) */}
-      <AnimatePresence>
-        {toast && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 20 }}
-            transition={{ duration: 0.2 }}
-            role="status"
-            aria-live="polite"
-            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-2 text-sm font-medium border border-slate-700 whitespace-nowrap max-w-[90vw]"
-          >
-            <span>
-              {toast.action === 'present'
-                ? (t.markedPresentUndo
+      {/* Undo Toast (4 seconds) - Portaled to body and centered horizontally */}
+      {typeof document !== 'undefined' && createPortal(
+        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-[150] w-max max-w-[92vw] pointer-events-none">
+          <AnimatePresence>
+            {toast && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 20 }}
+                transition={{ duration: 0.2 }}
+                role="status"
+                aria-live="polite"
+                className="pointer-events-auto bg-slate-900 dark:bg-slate-800 text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center justify-center gap-2 text-sm font-medium border border-slate-700 max-w-full"
+              >
+                <span className="truncate">
+                  {toast.action === 'present'
                     ? t.markedPresentUndo.replace('{name}', toast.memberName).split('—')[0].trim()
-                    : `Marked ${toast.memberName} present`)
-                : (t.markedAbsentUndo
-                    ? t.markedAbsentUndo.replace('{name}', toast.memberName).split('—')[0].trim()
-                    : `Marked ${toast.memberName} absent`)}
-            </span>
-            <span className="text-slate-400">—</span>
-            <button
-              type="button"
-              onClick={handleUndo}
-              aria-label="Undo"
-              className="text-amber-400 hover:text-amber-300 font-bold underline transition-colors"
-            >
-              {t.undo || (isEs ? 'Deshacer' : 'Undo')}
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
+                    : t.markedAbsentUndo.replace('{name}', toast.memberName).split('—')[0].trim()}
+                </span>
+                <span className="text-slate-400 shrink-0">—</span>
+                <button
+                  type="button"
+                  onClick={handleUndo}
+                  aria-label={t.undo}
+                  className="text-amber-400 hover:text-amber-300 font-bold underline transition-colors shrink-0"
+                >
+                  {t.undo}
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>,
+        document.body
+      )}
     </div>
   );
 };

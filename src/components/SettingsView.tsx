@@ -65,6 +65,18 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   };
 
   useEffect(() => {
+    if (clearStep === 0) return;
+    const prevBodyOverflow = document.body.style.overflow;
+    const prevHtmlOverflow = document.documentElement.style.overflow;
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prevBodyOverflow;
+      document.documentElement.style.overflow = prevHtmlOverflow;
+    };
+  }, [clearStep]);
+
+  useEffect(() => {
     const unsubscribe = subscribeToAuth((user) => {
       setCurrentUser(user);
     });
@@ -135,7 +147,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       });
     });
 
-    const header = ['Name', 'Phone', 'Instagram', 'Birthday', 'GPS Group', 'Evangelizado', 'Total Attendance'];
+    const header = ['Name', 'Phone', 'Instagram', 'Birthday', 'Invited By', 'GPS Group', 'Evangelizado', 'Total Attendance'];
     const rows = members.map(m => {
       const cleanHandle = (() => {
         if (!m.instagram) return '';
@@ -152,6 +164,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         escCsv(m.phone || ''),
         escCsv(cleanHandle ? `@${cleanHandle}` : ''),
         escCsv(m.birthday || ''),
+        escCsv(m.invitedBy || ''),
         escCsv(m.isGpsMember && m.gpsName ? m.gpsName : ''),
         escCsv((m.isEvangelized || m.evangelizado) ? (isEs ? 'Sí' : 'Yes') : (isEs ? 'No' : 'No')),
         String(attendanceCount[m.id] || 0),
@@ -226,12 +239,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const stepIcons = ['', '🤔', '😬', '😨', '🚨', '💀'];
 
   return (
-    <div className="flex flex-col h-full overflow-y-auto overflow-x-hidden pr-1 md:pr-2 space-y-6 md:space-y-8 relative">
+    <div className={`flex flex-col h-full overflow-x-hidden pr-1 md:pr-2 space-y-6 md:space-y-8 relative ${clearStep > 0 ? 'overflow-hidden' : 'overflow-y-auto'}`}>
 
       {/* 5-Step Clear All Modal */}
       <AnimatePresence>
         {clearStep > 0 && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm overscroll-contain">
             <motion.div
               key={clearStep}
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
@@ -417,16 +430,21 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               <div className="p-4 bg-slate-800 dark:bg-slate-950 rounded-xl flex flex-col gap-2 shadow-inner">
                 <div className="flex items-center gap-2 mb-1">
                   <Bug className="w-4 h-4 text-emerald-400" />
-                  <p className="text-xs text-emerald-400 uppercase tracking-wider font-bold">Sync Status</p>
+                  <p className="text-xs text-emerald-400 uppercase tracking-wider font-bold">
+                    {isEs ? 'Estado de Sincronización' : 'Sync Status'}
+                  </p>
                 </div>
                 <p className="text-xs text-slate-300 font-mono">
-                  Document: <span className="text-emerald-300">groups/main/data/state</span>
+                  {isEs ? 'Documento:' : 'Document:'} <span className="text-emerald-300">groups/main/data/state</span>
                 </p>
                 <p className="text-xs text-slate-300 font-mono">
-                  Last Sync: <span className="text-white">{formatSyncStatus()}</span>
+                  {isEs ? 'Última Sync:' : 'Last Sync:'} <span className="text-white">{formatSyncStatus()}</span>
                 </p>
                 <p className="text-xs text-slate-300 font-mono flex flex-col gap-1">
-                  Status: <span className={debugError === 'None' ? 'text-emerald-400' : 'text-rose-400'}>{debugError === 'None' ? 'Active Real-Time Sync' : debugError}</span>
+                  {isEs ? 'Estado:' : 'Status:'}{' '}
+                  <span className={debugError === 'None' ? 'text-emerald-400' : 'text-rose-400'}>
+                    {debugError === 'None' ? (isEs ? 'Sincronización en Tiempo Real Activa' : 'Active Real-Time Sync') : debugError}
+                  </span>
                 </p>
               </div>
 

@@ -196,6 +196,7 @@ export default function App() {
     address?: string; 
     phone?: string; 
     instagram?: string;
+    invitedBy?: string;
     isGpsMember?: boolean;
     gpsName?: string;
     occupation?: 'none' | 'studying' | 'working' | 'both';
@@ -213,11 +214,14 @@ export default function App() {
       address: data.address,
       phone: data.phone,
       instagram: data.instagram,
+      invitedBy: data.invitedBy,
       isGpsMember: data.isGpsMember,
       gpsName: data.gpsName,
       occupation: data.occupation,
       occupationTime: data.occupationTime,
       isEvangelized: data.isEvangelized,
+      evangelizado: data.isEvangelized,
+      evangelizadoDate: data.isEvangelized ? format(new Date(), 'yyyy-MM-dd') : undefined,
       isStaff: data.isStaff,
       ministry: data.ministry,
       joinDate: new Date().toISOString(),
@@ -309,6 +313,34 @@ export default function App() {
             });
           } catch (e) {
             console.error('Error removing deleted member from attendance:', e);
+          }
+        }
+      });
+    }
+  };
+
+  const handleBatchDeleteMembers = (ids: string[]) => {
+    const idSet = new Set(ids);
+    const newMembers = members.filter((m) => !idSet.has(m.id));
+    const newAttendance = attendanceRecords.map(record => ({
+      ...record,
+      presentMemberIds: record.presentMemberIds.filter(mid => !idSet.has(mid))
+    }));
+    setMembers(newMembers);
+    setAttendanceRecords(newAttendance);
+    pushToCloud(newMembers, gpsGroups);
+
+    if (auth.currentUser) {
+      attendanceRecords.forEach(async (r) => {
+        const removedFromRecord = r.presentMemberIds.filter(mid => idSet.has(mid));
+        if (removedFromRecord.length > 0) {
+          try {
+            await updateDoc(getAttendanceDocRef(r.date), {
+              presentMemberIds: arrayRemove(...removedFromRecord)
+            });
+            setLastSync(new Date().toISOString());
+          } catch (e) {
+            console.error('Error removing deleted members from attendance:', e);
           }
         }
       });
@@ -496,6 +528,7 @@ export default function App() {
                   onAddMember={handleAddMember}
                   onUpdateMember={handleUpdateMember}
                   onBatchUpdateMembers={handleBatchUpdateMembers}
+                  onBatchDeleteMembers={handleBatchDeleteMembers}
                   onDeleteMember={handleDeleteMember}
                   language={language}
                 />
