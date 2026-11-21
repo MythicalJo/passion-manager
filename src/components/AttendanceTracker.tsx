@@ -262,8 +262,8 @@ export const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
       {/* Header and Compact Horizontal Date Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-800">{t.attendance}</h2>
-          <div className="flex items-center gap-2 text-slate-500 mt-1">
+          <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100">{t.attendance}</h2>
+          <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 mt-1">
             <CalendarIcon className="w-4 h-4" />
             <span className="text-sm font-medium capitalize">{format(effectiveDate, 'EEEE, MMMM do, yyyy', { locale })}</span>
           </div>
@@ -271,12 +271,12 @@ export const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
 
         {/* Compact Horizontal Date Bar & Monthly Calendar Toggle */}
         <div className="flex flex-wrap items-center gap-2">
-          <div className="inline-flex items-center bg-slate-100 p-1 rounded-xl">
+          <div className="inline-flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
             <button
               type="button"
               onClick={handlePrevDay}
               aria-label="Previous"
-              className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-white transition-all shadow-sm"
+              className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-700 transition-all shadow-sm"
             >
               <ChevronLeft className="w-3.5 h-3.5" />
               <span>&lt; Previous</span>
@@ -289,7 +289,7 @@ export const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
                 "px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm",
                 isSameDay(effectiveDate, new Date())
                   ? "bg-indigo-600 text-white"
-                  : "text-slate-600 hover:text-slate-900 hover:bg-white"
+                  : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-700"
               )}
             >
               <span>Today</span>
@@ -298,7 +298,7 @@ export const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
               type="button"
               onClick={handleNextDay}
               aria-label="Next"
-              className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-white transition-all shadow-sm"
+              className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-700 transition-all shadow-sm"
             >
               <span>Next &gt;</span>
               <ChevronRight className="w-3.5 h-3.5" />
@@ -312,8 +312,8 @@ export const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
             className={cn(
               "flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-bold transition-all",
               showCalendar 
-                ? "bg-indigo-50 border-indigo-200 text-indigo-700 shadow-sm" 
-                : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
+                ? "bg-indigo-50 dark:bg-indigo-950/60 border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 shadow-sm" 
+                : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
             )}
           >
             <CalendarIcon className="w-4 h-4" />
@@ -347,7 +347,7 @@ export const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
 
       {/* Main List Area with Sticky Search and Filter Pills */}
       <div className="flex-1 overflow-y-auto pr-2 relative">
-        <div className="sticky top-0 z-20 bg-white pt-1 pb-4 border-b border-slate-100 mb-4 space-y-3">
+        <div className="sticky top-0 z-20 bg-white dark:bg-slate-900 pt-1 pb-4 border-b border-slate-100 dark:border-slate-800 mb-4 space-y-3">
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -356,18 +356,18 @@ export const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
                 placeholder={t.search}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all bg-white text-sm"
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 text-sm"
               />
             </div>
 
             <div className="flex items-center gap-4 justify-end shrink-0">
               <div className="text-center">
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{t.present}</p>
-                <p className="text-lg font-bold text-emerald-600">{stats.present}</p>
+                <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400">{stats.present}</p>
               </div>
               <div className="text-center">
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{t.absent}</p>
-                <p className="text-lg font-bold text-slate-400">{stats.absent}</p>
+                <p className="text-lg font-bold text-slate-400 dark:text-slate-500">{stats.absent}</p>
               </div>
             </div>
           </div>
@@ -385,8 +385,8 @@ export const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
                   className={cn(
                     "px-3.5 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap border shrink-0",
                     isSelected
-                      ? "bg-indigo-600 border-indigo-600 text-white shadow-sm shadow-indigo-200"
-                      : "bg-white border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50"
+                      ? "bg-indigo-600 border-indigo-600 text-white shadow-sm shadow-indigo-200 dark:shadow-indigo-950"
+                      : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700"
                   )}
                 >
                   <span>{opt.label}</span>
@@ -400,15 +400,15 @@ export const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
         <div className="space-y-3 pb-6">
           {filteredMembers.length === 0 ? (
             searchQuery.trim().length > 0 ? (
-              <div className="text-center py-10 px-4 bg-slate-50/70 border border-dashed border-slate-200 rounded-2xl space-y-4">
-                <div className="w-12 h-12 rounded-full bg-indigo-50 flex items-center justify-center mx-auto text-indigo-500">
+              <div className="text-center py-10 px-4 bg-slate-50/70 dark:bg-slate-800/40 border border-dashed border-slate-200 dark:border-slate-700 rounded-2xl space-y-4">
+                <div className="w-12 h-12 rounded-full bg-indigo-50 dark:bg-indigo-950/60 flex items-center justify-center mx-auto text-indigo-500">
                   <UserPlus className="w-6 h-6" />
                 </div>
-                <p className="text-sm text-slate-500">{t.noMembers}</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400">{t.noMembers}</p>
                 <button
                   type="button"
                   onClick={handleQuickAdd}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-md shadow-indigo-100 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-md shadow-indigo-100 dark:shadow-indigo-950 transition-all hover:scale-[1.02] active:scale-[0.98]"
                 >
                   <Plus className="w-4 h-4" />
                   <span>{quickAddText}</span>
@@ -439,36 +439,36 @@ export const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
                     className={cn(
                       "w-full flex items-center justify-between p-4 rounded-2xl border transition-all duration-200 text-left",
                       isPresent 
-                        ? "bg-emerald-50 border-emerald-100 shadow-sm" 
-                        : "bg-white border-slate-100 hover:border-slate-200"
+                        ? "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-100 dark:border-emerald-900/60 shadow-sm" 
+                        : "bg-white dark:bg-slate-800/90 border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700"
                     )}
                   >
                     <div className="flex items-center gap-3 min-w-0">
                       <div className={cn(
                         "w-10 h-10 rounded-full flex items-center justify-center font-bold transition-colors shrink-0",
-                        isPresent ? "bg-emerald-500 text-white" : "bg-slate-100 text-slate-400"
+                        isPresent ? "bg-emerald-500 text-white" : "bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-300"
                       )}>
                         {member.name.charAt(0).toUpperCase()}
                       </div>
                       <div className="flex flex-wrap items-center gap-1.5 min-w-0">
                         <span className={cn(
                           "font-semibold transition-colors truncate",
-                          isPresent ? "text-emerald-900" : "text-slate-700"
+                          isPresent ? "text-emerald-900 dark:text-emerald-200" : "text-slate-700 dark:text-slate-200"
                         )}>
                           {member.name}
                         </span>
                         {member.isStaff && (
-                          <span className="px-1.5 py-0.5 rounded bg-purple-100 text-purple-700 text-[9px] font-black uppercase tracking-wider shrink-0">
+                          <span className="px-1.5 py-0.5 rounded bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 text-[9px] font-black uppercase tracking-wider shrink-0">
                             {t.staff}
                           </span>
                         )}
                         {newcomer && (
-                          <span className="px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-700 text-[10px] font-bold uppercase tracking-wider border border-emerald-100/80 shrink-0">
+                          <span className="px-1.5 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 text-[10px] font-bold uppercase tracking-wider border border-emerald-100/80 dark:border-emerald-800/80 shrink-0">
                             {t.newBadge || (isEs ? 'Nuevo' : 'New')}
                           </span>
                         )}
                         {streak >= 4 && (
-                          <span className="px-1.5 py-0.5 rounded-md bg-amber-50 text-amber-700 text-[10px] font-bold tracking-wider border border-amber-200/80 shrink-0 flex items-center gap-0.5">
+                          <span className="px-1.5 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 text-[10px] font-bold tracking-wider border border-amber-200/80 dark:border-amber-800/80 shrink-0 flex items-center gap-0.5">
                             🔥 4+
                           </span>
                         )}
@@ -478,7 +478,7 @@ export const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
                       "w-8 h-8 rounded-full flex items-center justify-center transition-all shrink-0 ml-2",
                       isPresent 
                         ? "bg-emerald-500 text-white scale-110" 
-                        : "bg-slate-50 text-slate-300"
+                        : "bg-slate-50 dark:bg-slate-700 text-slate-300 dark:text-slate-400"
                     )}>
                       {isPresent ? <Check className="w-5 h-5" /> : <X className="w-4 h-4" />}
                     </div>

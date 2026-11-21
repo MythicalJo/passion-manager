@@ -308,25 +308,25 @@ export const MemberList: React.FC<MemberListProps> = ({ members, gpsGroups = [],
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-[2rem] p-8 max-w-sm w-full shadow-2xl border border-slate-100"
+              className="bg-white dark:bg-slate-900 rounded-[2rem] p-8 max-w-sm w-full shadow-2xl border border-slate-100 dark:border-slate-800"
             >
-              <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center mb-6 mx-auto">
+              <div className="w-16 h-16 bg-red-50 dark:bg-red-950/60 rounded-2xl flex items-center justify-center mb-6 mx-auto">
                 <Trash2 className="w-8 h-8 text-red-500" />
               </div>
-              <h3 className="text-xl font-black text-slate-800 text-center mb-2">{t.delete}</h3>
-              <p className="text-slate-500 text-center mb-8 leading-relaxed">
+              <h3 className="text-xl font-black text-slate-800 dark:text-slate-100 text-center mb-2">{t.delete}</h3>
+              <p className="text-slate-500 dark:text-slate-400 text-center mb-8 leading-relaxed">
                 {t.confirmDelete}
               </p>
               <div className="flex gap-3">
                 <button
                   onClick={() => setMemberToDelete(null)}
-                  className="flex-1 px-6 py-3 rounded-xl border border-slate-200 text-slate-600 font-bold hover:bg-slate-50 transition-colors"
+                  className="flex-1 px-6 py-3 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                 >
                   {t.cancel}
                 </button>
                 <button
                   onClick={confirmDelete}
-                  className="flex-1 px-6 py-3 rounded-xl bg-red-500 text-white font-bold hover:bg-red-600 transition-colors shadow-lg shadow-red-100"
+                  className="flex-1 px-6 py-3 rounded-xl bg-red-500 text-white font-bold hover:bg-red-600 transition-colors shadow-lg shadow-red-100 dark:shadow-red-950"
                 >
                   {t.delete}
                 </button>
@@ -343,19 +343,19 @@ export const MemberList: React.FC<MemberListProps> = ({ members, gpsGroups = [],
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-[2rem] p-8 max-w-sm w-full shadow-2xl border border-slate-100"
+              className="bg-white dark:bg-slate-900 rounded-[2rem] p-8 max-w-sm w-full shadow-2xl border border-slate-100 dark:border-slate-800"
             >
-              <div className="w-16 h-16 bg-amber-50 rounded-2xl flex items-center justify-center mb-6 mx-auto">
+              <div className="w-16 h-16 bg-amber-50 dark:bg-amber-950/60 rounded-2xl flex items-center justify-center mb-6 mx-auto">
                 {showArchived ? <ArchiveRestore className="w-8 h-8 text-amber-500" /> : <Archive className="w-8 h-8 text-amber-500" />}
               </div>
-              <h3 className="text-xl font-black text-slate-800 text-center mb-2">{showArchived ? t.unarchive : t.archive}</h3>
-              <p className="text-slate-500 text-center mb-8 leading-relaxed">
+              <h3 className="text-xl font-black text-slate-800 dark:text-slate-100 text-center mb-2">{showArchived ? t.unarchive : t.archive}</h3>
+              <p className="text-slate-500 dark:text-slate-400 text-center mb-8 leading-relaxed">
                 {showArchived ? t.confirmRestore : t.confirmArchive}
               </p>
               <div className="flex gap-3">
                 <button
                   onClick={() => setMemberToArchive(null)}
-                  className="flex-1 px-6 py-3 rounded-xl border border-slate-200 text-slate-600 font-bold hover:bg-slate-50 transition-colors"
+                  className="flex-1 px-6 py-3 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                 >
                   {t.cancel}
                 </button>
@@ -364,7 +364,7 @@ export const MemberList: React.FC<MemberListProps> = ({ members, gpsGroups = [],
                     onUpdateMember({ ...memberToArchive, isArchived: !showArchived });
                     setMemberToArchive(null);
                   }}
-                  className="flex-1 px-6 py-3 rounded-xl bg-amber-500 text-white font-bold hover:bg-amber-600 transition-colors shadow-lg shadow-amber-100"
+                  className="flex-1 px-6 py-3 rounded-xl bg-amber-500 text-white font-bold hover:bg-amber-600 transition-colors shadow-lg shadow-amber-100 dark:shadow-amber-950"
                 >
                   {showArchived ? t.unarchive : t.archive}
                 </button>
@@ -376,7 +376,7 @@ export const MemberList: React.FC<MemberListProps> = ({ members, gpsGroups = [],
 
       <div className="mb-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
-          <h2 className="text-2xl font-bold text-slate-800">{t.members}</h2>
+          <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100">{t.members}</h2>
           
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
             <div className="relative w-full sm:w-64">
@@ -386,14 +386,14 @@ export const MemberList: React.FC<MemberListProps> = ({ members, gpsGroups = [],
                 placeholder={t.search}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all bg-white text-sm"
+                className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 text-sm"
               />
             </div>
             
             <div className="flex items-center justify-between gap-2 shrink-0 w-full sm:w-auto">
               <button
                 onClick={() => { setShowArchived(!showArchived); setIsBatchMode(false); setSelectedIds(new Set()); }}
-                className={`flex-1 sm:flex-none flex items-center justify-center py-2.5 px-3 sm:py-2 rounded-xl border transition-all ${showArchived ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'}`}
+                className={`flex-1 sm:flex-none flex items-center justify-center py-2.5 px-3 sm:py-2 rounded-xl border transition-all ${showArchived ? 'bg-indigo-50 dark:bg-indigo-950 border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700'}`}
                 title={showArchived ? t.hideArchived : t.showArchived}
               >
                 {showArchived ? <ArchiveRestore className="w-5 h-5 sm:w-4 sm:h-4" /> : <Archive className="w-5 h-5 sm:w-4 sm:h-4" />}
@@ -402,7 +402,7 @@ export const MemberList: React.FC<MemberListProps> = ({ members, gpsGroups = [],
               
               <button
                 onClick={() => { setIsBatchMode(!isBatchMode); setSelectedIds(new Set()); }}
-                className={`flex-1 sm:flex-none flex items-center justify-center py-2.5 px-3 sm:py-2 rounded-xl border transition-all ${isBatchMode ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'}`}
+                className={`flex-1 sm:flex-none flex items-center justify-center py-2.5 px-3 sm:py-2 rounded-xl border transition-all ${isBatchMode ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700'}`}
                 title={t.batchArchive}
               >
                 <CheckCircle2 className="w-5 h-5 sm:w-4 sm:h-4" />
@@ -431,7 +431,7 @@ export const MemberList: React.FC<MemberListProps> = ({ members, gpsGroups = [],
               animate={{ height: 'auto', opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
               onSubmit={handleSubmit}
-              className="bg-slate-50 p-6 rounded-2xl border border-slate-200 mb-6 overflow-hidden"
+              className="bg-slate-50 dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 mb-6 overflow-hidden"
             >
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div className="space-y-1">
@@ -442,10 +442,10 @@ export const MemberList: React.FC<MemberListProps> = ({ members, gpsGroups = [],
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     className={cn(
-                      "w-full px-4 py-2 rounded-xl border transition-all bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500",
+                      "w-full px-4 py-2 rounded-xl border transition-all bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500",
                       isDuplicateName 
                         ? "border-red-500 text-red-600 focus:ring-red-500/20 focus:border-red-500" 
-                        : "border-slate-200"
+                        : "border-slate-200 dark:border-slate-700"
                     )}
                   />
                   {isDuplicateName && (
@@ -460,7 +460,7 @@ export const MemberList: React.FC<MemberListProps> = ({ members, gpsGroups = [],
                     type="tel"
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all bg-white"
+                    className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
                   />
                 </div>
                 <div className="space-y-1">
@@ -470,7 +470,7 @@ export const MemberList: React.FC<MemberListProps> = ({ members, gpsGroups = [],
                     placeholder={t.instagramPlaceholder}
                     value={formData.instagram}
                     onChange={(e) => setFormData({ ...formData, instagram: e.target.value })}
-                    className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all bg-white"
+                    className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400"
                   />
                 </div>
                 <div className="space-y-1">
@@ -479,7 +479,7 @@ export const MemberList: React.FC<MemberListProps> = ({ members, gpsGroups = [],
                     type="date"
                     value={formData.birthday}
                     onChange={(e) => setFormData({ ...formData, birthday: e.target.value })}
-                    className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all bg-white"
+                    className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
                   />
                 </div>
                 <div className="space-y-1">
@@ -489,7 +489,7 @@ export const MemberList: React.FC<MemberListProps> = ({ members, gpsGroups = [],
                     placeholder={t.likesPlaceholder}
                     value={formData.likes}
                     onChange={(e) => setFormData({ ...formData, likes: e.target.value })}
-                    className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all bg-white"
+                    className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400"
                   />
                 </div>
                 <div className="space-y-1">
@@ -499,7 +499,7 @@ export const MemberList: React.FC<MemberListProps> = ({ members, gpsGroups = [],
                     placeholder={t.foodPlaceholder}
                     value={formData.likedFood}
                     onChange={(e) => setFormData({ ...formData, likedFood: e.target.value })}
-                    className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all bg-white"
+                    className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400"
                   />
                 </div>
                 <div className="space-y-1">
@@ -508,7 +508,7 @@ export const MemberList: React.FC<MemberListProps> = ({ members, gpsGroups = [],
                     type="text"
                     value={formData.address}
                     onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                    className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all bg-white"
+                    className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
                   />
                 </div>
                 
@@ -521,10 +521,10 @@ export const MemberList: React.FC<MemberListProps> = ({ members, gpsGroups = [],
                         onChange={(e) => setFormData({ ...formData, isGpsMember: e.target.checked })}
                         className="sr-only"
                       />
-                      <div className={`w-10 h-5 rounded-full transition-colors ${formData.isGpsMember ? 'bg-indigo-600' : 'bg-slate-200'}`} />
+                      <div className={`w-10 h-5 rounded-full transition-colors ${formData.isGpsMember ? 'bg-indigo-600' : 'bg-slate-200 dark:bg-slate-700'}`} />
                       <div className={`absolute top-1 left-1 w-3 h-3 bg-white rounded-full transition-transform ${formData.isGpsMember ? 'translate-x-5' : ''}`} />
                     </div>
-                    <span className="text-sm font-bold text-slate-600">{t.gpsMember}</span>
+                    <span className="text-sm font-bold text-slate-600 dark:text-slate-300">{t.gpsMember}</span>
                   </label>
 
                   <AnimatePresence>
@@ -541,7 +541,7 @@ export const MemberList: React.FC<MemberListProps> = ({ members, gpsGroups = [],
                             required={formData.isGpsMember}
                             value={formData.gpsName}
                             onChange={(e) => setFormData({ ...formData, gpsName: e.target.value })}
-                            className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all bg-white font-medium text-slate-700"
+                            className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all bg-white dark:bg-slate-800 font-medium text-slate-700 dark:text-slate-200"
                           >
                             <option value="">{t.selectGpsGroup}</option>
                             {gpsGroups.map((grp) => (
@@ -557,7 +557,7 @@ export const MemberList: React.FC<MemberListProps> = ({ members, gpsGroups = [],
                   </AnimatePresence>
                 </div>
 
-                <div className="space-y-4 md:col-span-2 pt-2 border-t border-slate-200">
+                <div className="space-y-4 md:col-span-2 pt-2 border-t border-slate-200 dark:border-slate-700">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <div className="space-y-3">
                       <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">{t.occupation}</label>
@@ -570,8 +570,8 @@ export const MemberList: React.FC<MemberListProps> = ({ members, gpsGroups = [],
                             className={cn(
                               "px-3 py-1.5 rounded-lg text-xs font-bold transition-all border",
                               formData.occupation === opt 
-                                ? "bg-indigo-600 border-indigo-600 text-white shadow-md shadow-indigo-100" 
-                                : "bg-white border-slate-200 text-slate-500 hover:border-indigo-200"
+                                ? "bg-indigo-600 border-indigo-600 text-white shadow-md shadow-indigo-100 dark:shadow-indigo-950" 
+                                : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-indigo-200 dark:hover:border-indigo-800"
                             )}
                           >
                             {t[opt as keyof typeof t] || opt}
@@ -599,7 +599,7 @@ export const MemberList: React.FC<MemberListProps> = ({ members, gpsGroups = [],
                                       "px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all border",
                                       formData.occupationTime === opt 
                                         ? "bg-indigo-500 border-indigo-500 text-white" 
-                                        : "bg-white border-slate-200 text-slate-400 hover:border-indigo-100"
+                                        : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-400 hover:border-indigo-100 dark:hover:border-indigo-800"
                                     )}
                                   >
                                     {t[opt as keyof typeof t] || opt}
@@ -622,10 +622,10 @@ export const MemberList: React.FC<MemberListProps> = ({ members, gpsGroups = [],
                             onChange={(e) => setFormData({ ...formData, isEvangelized: e.target.checked })}
                             className="sr-only"
                           />
-                          <div className={`w-10 h-5 rounded-full transition-colors ${formData.isEvangelized ? 'bg-emerald-500' : 'bg-slate-200'}`} />
+                          <div className={`w-10 h-5 rounded-full transition-colors ${formData.isEvangelized ? 'bg-emerald-500' : 'bg-slate-200 dark:bg-slate-700'}`} />
                           <div className={`absolute top-1 left-1 w-3 h-3 bg-white rounded-full transition-transform ${formData.isEvangelized ? 'translate-x-5' : ''}`} />
                         </div>
-                        <span className="text-sm font-bold text-slate-600">{t.evangelized}</span>
+                        <span className="text-sm font-bold text-slate-600 dark:text-slate-300">{t.evangelized}</span>
                       </label>
                     </div>
 
@@ -639,10 +639,10 @@ export const MemberList: React.FC<MemberListProps> = ({ members, gpsGroups = [],
                             onChange={(e) => setFormData({ ...formData, isStaff: e.target.checked })}
                             className="sr-only"
                           />
-                          <div className={`w-10 h-5 rounded-full transition-colors ${formData.isStaff ? 'bg-purple-500' : 'bg-slate-200'}`} />
+                          <div className={`w-10 h-5 rounded-full transition-colors ${formData.isStaff ? 'bg-purple-500' : 'bg-slate-200 dark:bg-slate-700'}`} />
                           <div className={`absolute top-1 left-1 w-3 h-3 bg-white rounded-full transition-transform ${formData.isStaff ? 'translate-x-5' : ''}`} />
                         </div>
-                         <span className="text-sm font-bold text-slate-600">{t.staff}</span>
+                         <span className="text-sm font-bold text-slate-600 dark:text-slate-300">{t.staff}</span>
                       </label>
                     </div>
 
@@ -654,12 +654,12 @@ export const MemberList: React.FC<MemberListProps> = ({ members, gpsGroups = [],
                           exit={{ opacity: 0, height: 0 }}
                           className="overflow-hidden"
                         >
-                          <label className="block text-sm font-bold text-slate-700 mb-2 mt-4">{t.ministry}</label>
+                          <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 mt-4">{t.ministry}</label>
                           <input
                             type="text"
                             value={formData.ministry}
                             onChange={(e) => setFormData({ ...formData, ministry: e.target.value })}
-                            className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-medium text-slate-600 bg-slate-50"
+                            className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-medium text-slate-600 dark:text-slate-200 bg-slate-50 dark:bg-slate-800"
                             placeholder={t.ministryPlaceholder}
                           />
                         </motion.div>
@@ -672,7 +672,7 @@ export const MemberList: React.FC<MemberListProps> = ({ members, gpsGroups = [],
                 <button
                   type="button"
                   onClick={cancel}
-                  className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 transition-colors font-medium"
+                  className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors font-medium"
                 >
                   {t.cancel}
                 </button>
@@ -682,8 +682,8 @@ export const MemberList: React.FC<MemberListProps> = ({ members, gpsGroups = [],
                   className={cn(
                     "px-6 py-2 rounded-xl transition-all flex items-center gap-2 font-medium shadow-lg",
                     isDuplicateName 
-                      ? "bg-slate-200 text-slate-400 cursor-not-allowed shadow-none" 
-                      : "bg-indigo-600 text-white hover:bg-indigo-700 shadow-indigo-100"
+                      ? "bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed shadow-none" 
+                      : "bg-indigo-600 text-white hover:bg-indigo-700 shadow-indigo-100 dark:shadow-indigo-950"
                   )}
                 >
                   {editingId ? <Check className="w-4 h-4" /> : <UserPlus className="w-4 h-4" />}
@@ -709,8 +709,8 @@ export const MemberList: React.FC<MemberListProps> = ({ members, gpsGroups = [],
                   key={letter}
                   className="space-y-3"
                 >
-                  <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-sm py-2">
-                    <h3 className="text-sm font-black text-indigo-600 uppercase tracking-widest border-b border-indigo-100 pb-1">
+                  <div className="sticky top-0 z-10 bg-white/80 dark:bg-slate-950/80 backdrop-blur-sm py-2">
+                    <h3 className="text-sm font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest border-b border-indigo-100 dark:border-indigo-900/50 pb-1">
                       {letter}
                     </h3>
                   </div>
@@ -729,23 +729,23 @@ export const MemberList: React.FC<MemberListProps> = ({ members, gpsGroups = [],
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, scale: 0.95 }}
                           onClick={() => isBatchMode ? toggleSelection(member.id) : toggleExpand(member.id)}
-                          className={`group bg-white rounded-2xl border transition-colors cursor-pointer overflow-hidden ${isExpanded ? 'p-6 border-indigo-200 shadow-lg ring-1 ring-indigo-500/5' : 'p-3 border-slate-100 shadow-sm hover:border-indigo-100 hover:shadow-md'} ${isSelected ? 'ring-2 ring-indigo-500 border-indigo-500 bg-indigo-50/30' : ''}`}
+                          className={`group bg-white dark:bg-slate-900 rounded-2xl border transition-colors cursor-pointer overflow-hidden ${isExpanded ? 'p-6 border-indigo-200 dark:border-indigo-800 shadow-lg ring-1 ring-indigo-500/5' : 'p-3 border-slate-100 dark:border-slate-800 shadow-sm hover:border-indigo-100 dark:hover:border-indigo-900/50 hover:shadow-md'} ${isSelected ? 'ring-2 ring-indigo-500 border-indigo-500 bg-indigo-50/30 dark:bg-indigo-950/30' : ''}`}
                         >
                           <div className="flex items-start sm:items-center justify-between pointer-events-none w-full gap-2 min-w-0">
                             <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
                               {isBatchMode && (
-                                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors shrink-0 ${isSelected ? 'bg-indigo-600 border-indigo-600' : 'border-slate-300'}`}>
+                                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors shrink-0 ${isSelected ? 'bg-indigo-600 border-indigo-600' : 'border-slate-300 dark:border-slate-600'}`}>
                                   {isSelected && <Check className="w-4 h-4 text-white" />}
                                 </div>
                               )}
-                              <div className={`rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600 font-bold shadow-inner transition-all ${isExpanded ? 'w-14 h-14 text-xl' : 'w-10 h-10 text-base'}`}>
+                              <div className={`rounded-xl bg-indigo-50 dark:bg-indigo-950/60 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold shadow-inner transition-all ${isExpanded ? 'w-14 h-14 text-xl' : 'w-10 h-10 text-base'}`}>
                                 {member.name.charAt(0).toUpperCase()}
                               </div>
                               <div className="space-y-0.5 flex-1 min-w-0">
                                 <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                                  <p className={`font-bold text-slate-800 transition-colors break-words ${isExpanded ? 'text-lg' : 'text-base'}`}>{member.name}</p>
+                                  <p className={`font-bold text-slate-800 dark:text-slate-100 transition-colors break-words ${isExpanded ? 'text-lg' : 'text-base'}`}>{member.name}</p>
                                   {member.isStaff && (
-                                    <span className="px-2 py-0.5 rounded-md bg-purple-100 text-purple-700 text-[10px] font-black uppercase tracking-wider shrink-0 mt-0.5 sm:mt-0">
+                                    <span className="px-2 py-0.5 rounded-md bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 text-[10px] font-black uppercase tracking-wider shrink-0 mt-0.5 sm:mt-0">
                                       {t.staff}
                                     </span>
                                   )}
@@ -756,7 +756,7 @@ export const MemberList: React.FC<MemberListProps> = ({ members, gpsGroups = [],
                                   )}
                                 </div>
                                 {!isExpanded && (
-                                  <div className="flex items-center gap-3 text-[10px] text-slate-400 min-w-0">
+                                  <div className="flex items-center gap-3 text-[10px] text-slate-400 dark:text-slate-400 min-w-0">
                                     {member.phone && (
                                       <div className="flex items-center gap-1 shrink-0">
                                         <Phone className="w-2.5 h-2.5 shrink-0" />
@@ -769,7 +769,7 @@ export const MemberList: React.FC<MemberListProps> = ({ members, gpsGroups = [],
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         onClick={(e) => e.stopPropagation()}
-                                        className="flex items-center gap-1 shrink-0 text-pink-600 hover:text-pink-700 hover:underline pointer-events-auto"
+                                        className="flex items-center gap-1 shrink-0 text-pink-600 dark:text-pink-400 hover:text-pink-700 dark:hover:text-pink-300 hover:underline pointer-events-auto"
                                         title={`@${cleanInstagramHandle(member.instagram)}`}
                                       >
                                         <Instagram className="w-2.5 h-2.5 shrink-0" />
@@ -794,26 +794,26 @@ export const MemberList: React.FC<MemberListProps> = ({ members, gpsGroups = [],
                                     e.stopPropagation();
                                     setMemberToArchive(member);
                                   }}
-                                  className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-slate-100 rounded-xl transition-all"
+                                  className="p-2 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all"
                                   title={showArchived ? t.unarchive : t.archive}
                                 >
                                   {showArchived ? <ArchiveRestore className="w-4 h-4" /> : <Archive className="w-4 h-4" />}
                                 </button>
                                 <button
                                   onClick={(e) => startEdit(e, member)}
-                                  className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"
+                                  className="p-2 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/60 rounded-xl transition-all"
                                   title={t.edit}
                                 >
                                   <Edit2 className="w-4 h-4" />
                                 </button>
                                 <button
                                   onClick={(e) => handleDelete(e, member.id)}
-                                  className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                                  className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/60 rounded-xl transition-all"
                                   title={t.delete}
                                 >
                                   <Trash2 className="w-4 h-4" />
                                 </button>
-                                <div className={`p-1 text-slate-300 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`}>
+                                <div className={`p-1 text-slate-300 dark:text-slate-600 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`}>
                                   <ChevronDown className="w-4 h-4" />
                                 </div>
                               </div>
@@ -828,7 +828,7 @@ export const MemberList: React.FC<MemberListProps> = ({ members, gpsGroups = [],
                                 exit={{ height: 0, opacity: 0 }}
                                 className="overflow-hidden"
                               >
-                                <div className="mt-4 pt-4 border-t border-slate-50">
+                                <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
                                   <div className="flex flex-wrap gap-x-5 gap-y-1 mb-4">
                                     {member.birthday && (
                                       <div className="flex items-center gap-1.5 text-xs text-slate-400">
@@ -845,28 +845,28 @@ export const MemberList: React.FC<MemberListProps> = ({ members, gpsGroups = [],
                                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
                                     {member.phone && (
                                       <div className="flex items-start gap-3">
-                                        <div className="w-8 h-8 rounded-xl bg-emerald-50 flex items-center justify-center shrink-0">
+                                        <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 flex items-center justify-center shrink-0">
                                           <Phone className="w-4 h-4 text-emerald-500" />
                                         </div>
                                         <div className="space-y-0.5">
-                                          <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">{t.phone}</p>
-                                          <p className="text-sm text-slate-600 font-medium leading-tight">{member.phone}</p>
+                                          <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">{t.phone}</p>
+                                          <p className="text-sm text-slate-600 dark:text-slate-300 font-medium leading-tight">{member.phone}</p>
                                         </div>
                                       </div>
                                     )}
                                     {cleanInstagramHandle(member.instagram) && (
                                       <div className="flex items-start gap-3">
-                                        <div className="w-8 h-8 rounded-xl bg-pink-50 flex items-center justify-center shrink-0">
+                                        <div className="w-8 h-8 rounded-xl bg-pink-50 dark:bg-pink-950/60 flex items-center justify-center shrink-0">
                                           <Instagram className="w-4 h-4 text-pink-500" />
                                         </div>
                                         <div className="space-y-0.5">
-                                          <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">{t.instagram}</p>
+                                          <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">{t.instagram}</p>
                                           <a
                                             href={`https://instagram.com/${cleanInstagramHandle(member.instagram)}`}
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             onClick={(e) => e.stopPropagation()}
-                                            className="text-sm text-pink-600 hover:text-pink-800 hover:underline font-medium leading-tight flex items-center gap-1"
+                                            className="text-sm text-pink-600 dark:text-pink-400 hover:text-pink-800 dark:hover:text-pink-300 hover:underline font-medium leading-tight flex items-center gap-1"
                                           >
                                             @{cleanInstagramHandle(member.instagram)}
                                           </a>
@@ -874,68 +874,68 @@ export const MemberList: React.FC<MemberListProps> = ({ members, gpsGroups = [],
                                       </div>
                                     )}
                                     <div className="flex items-start gap-3">
-                                      <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${member.isGpsMember && member.gpsName ? 'bg-indigo-50' : 'bg-slate-50'}`}>
+                                      <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${member.isGpsMember && member.gpsName ? 'bg-indigo-50 dark:bg-indigo-950/60' : 'bg-slate-50 dark:bg-slate-800'}`}>
                                         <Compass className={`w-4 h-4 ${member.isGpsMember && member.gpsName ? 'text-indigo-500' : 'text-slate-400'}`} />
                                       </div>
                                       <div className="space-y-0.5">
-                                        <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">GPS</p>
-                                        <p className={`text-sm font-medium leading-tight ${member.isGpsMember && member.gpsName ? 'text-slate-600' : 'text-slate-400'}`}>
+                                        <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">GPS</p>
+                                        <p className={`text-sm font-medium leading-tight ${member.isGpsMember && member.gpsName ? 'text-slate-600 dark:text-slate-300' : 'text-slate-400'}`}>
                                           {member.isGpsMember && member.gpsName ? member.gpsName : t.notInGps}
                                         </p>
                                       </div>
                                     </div>
                                     {member.isStaff && member.ministry && (
                                       <div className="flex items-start gap-3">
-                                        <div className="w-8 h-8 rounded-xl bg-purple-50 flex items-center justify-center shrink-0">
+                                        <div className="w-8 h-8 rounded-xl bg-purple-50 dark:bg-purple-950/60 flex items-center justify-center shrink-0">
                                           <Shield className="w-4 h-4 text-purple-500" />
                                         </div>
                                         <div className="space-y-0.5">
-                                          <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">{t.ministry}</p>
-                                          <p className="text-sm text-slate-600 font-medium leading-tight">{member.ministry}</p>
+                                          <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">{t.ministry}</p>
+                                          <p className="text-sm text-slate-600 dark:text-slate-300 font-medium leading-tight">{member.ministry}</p>
                                         </div>
                                       </div>
                                     )}
                                     {member.likes && (
                                       <div className="flex items-start gap-3">
-                                        <div className="w-8 h-8 rounded-xl bg-rose-50 flex items-center justify-center shrink-0">
+                                        <div className="w-8 h-8 rounded-xl bg-rose-50 dark:bg-rose-950/60 flex items-center justify-center shrink-0">
                                           <Heart className="w-4 h-4 text-rose-500" />
                                         </div>
                                         <div className="space-y-0.5">
-                                          <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">{t.likes.split(' / ')[0]}</p>
-                                          <p className="text-sm text-slate-600 font-medium leading-tight">{member.likes}</p>
+                                          <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">{t.likes.split(' / ')[0]}</p>
+                                          <p className="text-sm text-slate-600 dark:text-slate-300 font-medium leading-tight">{member.likes}</p>
                                         </div>
                                       </div>
                                     )}
                                     {member.likedFood && (
                                       <div className="flex items-start gap-3">
-                                        <div className="w-8 h-8 rounded-xl bg-amber-50 flex items-center justify-center shrink-0">
+                                        <div className="w-8 h-8 rounded-xl bg-amber-50 dark:bg-amber-950/60 flex items-center justify-center shrink-0">
                                           <Utensils className="w-4 h-4 text-amber-500" />
                                         </div>
                                         <div className="space-y-0.5">
-                                          <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">{t.likedFood}</p>
-                                          <p className="text-sm text-slate-600 font-medium leading-tight">{member.likedFood}</p>
+                                          <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">{t.likedFood}</p>
+                                          <p className="text-sm text-slate-600 dark:text-slate-300 font-medium leading-tight">{member.likedFood}</p>
                                         </div>
                                       </div>
                                     )}
                                     {member.address && (
                                       <div className="flex items-start gap-3">
-                                        <div className="w-8 h-8 rounded-xl bg-slate-50 flex items-center justify-center shrink-0">
+                                        <div className="w-8 h-8 rounded-xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center shrink-0">
                                           <MapPin className="w-4 h-4 text-slate-500" />
                                         </div>
                                         <div className="space-y-0.5">
-                                          <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">{t.address}</p>
-                                          <p className="text-sm text-slate-600 font-medium leading-tight">{member.address}</p>
+                                          <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">{t.address}</p>
+                                          <p className="text-sm text-slate-600 dark:text-slate-300 font-medium leading-tight">{member.address}</p>
                                         </div>
                                       </div>
                                     )}
                                     {member.occupation && member.occupation !== 'none' && (
                                       <div className="flex items-start gap-3">
-                                        <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
+                                        <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-950/60 flex items-center justify-center shrink-0">
                                           <User className="w-4 h-4 text-blue-500" />
                                         </div>
                                         <div className="space-y-0.5">
-                                          <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">{t.occupation}</p>
-                                          <p className="text-sm text-slate-600 font-medium leading-tight">
+                                          <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">{t.occupation}</p>
+                                          <p className="text-sm text-slate-600 dark:text-slate-300 font-medium leading-tight">
                                             {t[member.occupation as keyof typeof t]} 
                                             {member.occupationTime && member.occupationTime !== 'none' && ` (${t[member.occupationTime as keyof typeof t]})`}
                                           </p>
@@ -943,12 +943,12 @@ export const MemberList: React.FC<MemberListProps> = ({ members, gpsGroups = [],
                                       </div>
                                     )}
                                     <div className="flex items-start gap-3">
-                                      <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${member.isEvangelized ? 'bg-emerald-50' : 'bg-slate-50'}`}>
+                                      <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${member.isEvangelized ? 'bg-emerald-50 dark:bg-emerald-950/60' : 'bg-slate-50 dark:bg-slate-800'}`}>
                                         <CheckCircle2 className={`w-4 h-4 ${member.isEvangelized ? 'text-emerald-500' : 'text-slate-400'}`} />
                                       </div>
                                       <div className="space-y-0.5">
-                                        <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">{t.evangelized}</p>
-                                        <p className={`text-sm font-bold leading-tight ${member.isEvangelized ? 'text-emerald-600' : 'text-slate-500'}`}>
+                                        <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">{t.evangelized}</p>
+                                        <p className={`text-sm font-bold leading-tight ${member.isEvangelized ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-500'}`}>
                                           {member.isEvangelized ? t.yes : t.no}
                                         </p>
                                       </div>

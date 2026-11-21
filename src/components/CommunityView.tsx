@@ -257,18 +257,18 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
-          className="bg-white rounded-[2rem] max-w-md w-full shadow-2xl border border-slate-100 flex flex-col max-h-[80vh] overflow-hidden"
+          className="bg-white dark:bg-slate-900 rounded-[2rem] max-w-md w-full shadow-2xl border border-slate-100 dark:border-slate-800 flex flex-col max-h-[80vh] overflow-hidden"
         >
-          <div className="p-6 border-b border-slate-100 flex items-center justify-between shrink-0 bg-slate-50">
+          <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between shrink-0 bg-slate-50 dark:bg-slate-800/80">
             <div className="flex items-center gap-3">
               <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center", iconTheme)}>
                 <Icon className="w-5 h-5" />
               </div>
-              <h3 className="text-xl font-black text-slate-800">{title}</h3>
+              <h3 className="text-xl font-black text-slate-800 dark:text-slate-100">{title}</h3>
             </div>
             <button
               onClick={() => setExpandedStat(null)}
-              className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-200 rounded-full transition-colors"
+              className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
@@ -279,7 +279,7 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
             <div>
               <div className="flex items-center gap-2 mb-4">
                 {isDemographicModal ? <Users className="w-5 h-5 text-indigo-500" /> : <CheckCircle2 className="w-5 h-5 text-emerald-500" />}
-                <h4 className="text-sm font-bold text-slate-800 uppercase tracking-widest">
+                <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200 uppercase tracking-widest">
                   {isDemographicModal ? `${completedMembers.length} ${t.members}` : `${t.completed} (${completedMembers.length})`}
                 </h4>
               </div>
@@ -298,18 +298,18 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
                       }}
                       className={cn(
                         "flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-xl border gap-1 transition-all",
-                        expandedStat === 'gps' && "cursor-pointer hover:border-indigo-300 hover:shadow-sm",
-                        isDemographicModal ? "bg-white border-slate-200 shadow-sm" : "bg-emerald-50/50 border-emerald-100/50"
+                        expandedStat === 'gps' && "cursor-pointer hover:border-indigo-300 dark:hover:border-indigo-700 hover:shadow-sm",
+                        isDemographicModal ? "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 shadow-sm" : "bg-emerald-50/50 dark:bg-emerald-950/40 border-emerald-100/50 dark:border-emerald-900/40"
                       )}
                     >
-                      <span className="font-bold text-slate-700">{m.name}</span>
+                      <span className="font-bold text-slate-700 dark:text-slate-200">{m.name}</span>
                       {expandedStat === 'gps' && m.gpsName && (
-                        <span className="text-xs font-semibold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-md max-w-full truncate">
+                        <span className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 px-2 py-1 rounded-md max-w-full truncate">
                           {m.gpsName}
                         </span>
                       )}
                       {expandedStat === 'staff' && m.ministry && (
-                        <span className="text-xs font-semibold text-purple-600 bg-purple-50 px-2 py-1 rounded-md max-w-full truncate">
+                        <span className="text-xs font-semibold text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/60 px-2 py-1 rounded-md max-w-full truncate">
                           {m.ministry}
                         </span>
                       )}
@@ -324,7 +324,7 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
               <div>
                 <div className="flex items-center gap-2 mb-4">
                   <XCircle className="w-5 h-5 text-rose-500" />
-                  <h4 className="text-sm font-bold text-slate-800 uppercase tracking-widest">
+                  <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200 uppercase tracking-widest">
                     {t.missing} ({missingMembersList.length})
                   </h4>
                 </div>
@@ -343,17 +343,17 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
                             setMemberToAssignGps(m);
                           }
                         }}
-                        className="font-medium text-slate-600 p-3 bg-rose-50/50 hover:bg-rose-100/60 rounded-xl border border-rose-100/50 flex items-center justify-between cursor-pointer transition-colors"
+                        className="font-medium text-slate-600 dark:text-slate-300 p-3 bg-rose-50/50 dark:bg-rose-950/30 hover:bg-rose-100/60 dark:hover:bg-rose-900/40 rounded-xl border border-rose-100/50 dark:border-rose-900/40 flex items-center justify-between cursor-pointer transition-colors"
                         title={expandedStat === 'evangelism' ? t.markEvangelizado : t.assignToGps}
                       >
-                        <span className="font-bold text-slate-700">{m.name}</span>
+                        <span className="font-bold text-slate-700 dark:text-slate-200">{m.name}</span>
                         {expandedStat === 'evangelism' && (
-                          <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2.5 py-1 rounded-lg">
+                          <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950 px-2.5 py-1 rounded-lg">
                             + {t.markEvangelizado}
                           </span>
                         )}
                         {expandedStat === 'gps' && (
-                          <span className="text-[10px] font-bold text-indigo-700 bg-indigo-100 px-2.5 py-1 rounded-lg">
+                          <span className="text-[10px] font-bold text-indigo-700 dark:text-indigo-400 bg-indigo-100 dark:bg-indigo-950 px-2.5 py-1 rounded-lg">
                             + {t.assignToGps}
                           </span>
                         )}
@@ -383,14 +383,14 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
               initial={{ opacity: 0, scale: 0.95 }} 
               animate={{ opacity: 1, scale: 1 }} 
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-slate-100 space-y-4"
+              className="bg-white dark:bg-slate-900 rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-slate-100 dark:border-slate-800 space-y-4"
             >
-              <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto">
                 <CheckCircle2 className="w-6 h-6" />
               </div>
               <div className="text-center">
-                <h4 className="text-lg font-black text-slate-800">{t.confirmEvangelizadoTitle}</h4>
-                <p className="text-sm text-slate-500 mt-1">
+                <h4 className="text-lg font-black text-slate-800 dark:text-slate-100">{t.confirmEvangelizadoTitle}</h4>
+                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
                   {t.confirmEvangelizadoDesc.replace('{name}', memberToEvangelize.name)}
                 </p>
               </div>
@@ -398,7 +398,7 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setMemberToEvangelize(null)}
-                  className="px-4 py-2 rounded-xl text-slate-500 hover:bg-slate-100 font-bold text-sm transition-colors"
+                  className="px-4 py-2 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 font-bold text-sm transition-colors"
                 >
                   {t.cancel}
                 </button>
@@ -430,20 +430,20 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
               initial={{ opacity: 0, scale: 0.95 }} 
               animate={{ opacity: 1, scale: 1 }} 
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-slate-100 space-y-4"
+              className="bg-white dark:bg-slate-900 rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-slate-100 dark:border-slate-800 space-y-4"
             >
-              <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto">
+              <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mx-auto">
                 <Compass className="w-6 h-6" />
               </div>
               <div className="text-center">
-                <h4 className="text-lg font-black text-slate-800">{t.assignGpsTitle}</h4>
-                <p className="text-sm text-slate-500 mt-1">
+                <h4 className="text-lg font-black text-slate-800 dark:text-slate-100">{t.assignGpsTitle}</h4>
+                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
                   {t.assignGpsDesc.replace('{name}', memberToAssignGps.name)}
                 </p>
               </div>
 
               {gpsGroups.length === 0 ? (
-                <div className="text-xs text-amber-700 bg-amber-50 p-3 rounded-2xl border border-amber-200">
+                <div className="text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 p-3 rounded-2xl border border-amber-200 dark:border-amber-900">
                   {t.noGpsGroups}
                 </div>
               ) : (
@@ -452,7 +452,7 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
                   <select
                     value={selectedGpsToAssign}
                     onChange={(e) => setSelectedGpsToAssign(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 font-medium text-slate-700 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 outline-none"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 font-medium text-slate-700 dark:text-slate-200 bg-slate-50 dark:bg-slate-800 focus:bg-white dark:focus:bg-slate-700 focus:ring-2 focus:ring-indigo-500/20 outline-none"
                   >
                     <option value="">{t.selectGpsGroup}</option>
                     {gpsGroups.map(grp => (
@@ -474,7 +474,7 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
                       });
                       setMemberToAssignGps(null);
                     }}
-                    className="px-3 py-2 rounded-xl text-rose-600 hover:bg-rose-50 font-bold text-xs transition-colors"
+                    className="px-3 py-2 rounded-xl text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/60 font-bold text-xs transition-colors"
                   >
                     {t.removeFromGps}
                   </button>
@@ -483,7 +483,7 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
                   <button
                     type="button"
                     onClick={() => setMemberToAssignGps(null)}
-                    className="px-4 py-2 rounded-xl text-slate-500 hover:bg-slate-100 font-bold text-sm transition-colors"
+                    className="px-4 py-2 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 font-bold text-sm transition-colors"
                   >
                     {t.cancel}
                   </button>
@@ -514,19 +514,19 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
       {/* Header & Sub-Tab Navigation */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-black text-slate-900 tracking-tight mb-1">{t.communityInsights}</h2>
-          <p className="text-slate-500 text-sm">{t.communityDesc}</p>
+          <h2 className="text-3xl font-black text-slate-900 dark:text-slate-100 tracking-tight mb-1">{t.communityInsights}</h2>
+          <p className="text-slate-500 dark:text-slate-400 text-sm">{t.communityDesc}</p>
         </div>
 
-        <div className="flex items-center gap-1 bg-slate-100 p-1.5 rounded-2xl w-fit">
+        <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1.5 rounded-2xl w-fit">
           <button
             type="button"
             onClick={() => setSubTab('insights')}
             className={cn(
               "px-4 py-2 rounded-xl text-xs font-bold transition-all",
               subTab === 'insights' 
-                ? "bg-white text-indigo-600 shadow-sm" 
-                : "text-slate-500 hover:text-slate-700"
+                ? "bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-sm" 
+                : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
             )}
           >
             {t.gpsOverview}
@@ -537,14 +537,14 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
             className={cn(
               "px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5",
               subTab === 'gps' 
-                ? "bg-white text-indigo-600 shadow-sm" 
-                : "text-slate-500 hover:text-slate-700"
+                ? "bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-sm" 
+                : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
             )}
           >
             <Compass className="w-3.5 h-3.5" />
             {t.gpsGroupsTitle}
             {gpsGroups.length > 0 && (
-              <span className="px-1.5 py-0.5 rounded-full bg-indigo-50 text-[10px] text-indigo-600">
+              <span className="px-1.5 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950 text-[10px] text-indigo-600 dark:text-indigo-400">
                 {gpsGroups.length}
               </span>
             )}
@@ -556,8 +556,8 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
         /* GPS Management Sub-Tab */
         <div className="space-y-6">
           {/* Add GPS Group Card */}
-          <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm">
-            <h3 className="text-base font-bold text-slate-800 mb-3 flex items-center gap-2">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm">
+            <h3 className="text-base font-bold text-slate-800 dark:text-slate-100 mb-3 flex items-center gap-2">
               <Compass className="w-5 h-5 text-indigo-500" />
               {t.manageGpsGroups}
             </h3>
@@ -567,12 +567,12 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
                 value={newGroupName}
                 onChange={(e) => setNewGroupName(e.target.value)}
                 placeholder={t.newGpsPlaceholder}
-                className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm font-medium"
+                className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm font-medium"
               />
               <button
                 type="submit"
                 disabled={!newGroupName.trim()}
-                className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-xl text-sm font-bold shadow-md shadow-indigo-100 flex items-center justify-center gap-2 transition-colors shrink-0"
+                className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-xl text-sm font-bold shadow-md shadow-indigo-100 dark:shadow-indigo-950 flex items-center justify-center gap-2 transition-colors shrink-0"
               >
                 <Plus className="w-4 h-4" />
                 {t.addGroup}
@@ -583,23 +583,23 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
           {/* Registered GPS Groups Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {gpsGroups.length === 0 ? (
-              <div className="md:col-span-2 bg-slate-50 rounded-3xl p-8 border border-slate-200/60 text-center text-slate-400">
-                <Compass className="w-10 h-10 text-slate-300 mx-auto mb-2" />
-                <p className="font-bold text-slate-600">{t.noGpsGroups}</p>
+              <div className="md:col-span-2 bg-slate-50 dark:bg-slate-900 rounded-3xl p-8 border border-slate-200/60 dark:border-slate-800 text-center text-slate-400">
+                <Compass className="w-10 h-10 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
+                <p className="font-bold text-slate-600 dark:text-slate-300">{t.noGpsGroups}</p>
               </div>
             ) : (
               gpsGroups.map(group => {
                 const groupMembers = activeMembers.filter(m => m.isGpsMember && m.gpsName === group);
                 return (
-                  <div key={group} className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm flex flex-col justify-between">
+                  <div key={group} className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col justify-between">
                     <div>
-                      <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-100">
+                      <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-100 dark:border-slate-800">
                         <div className="flex items-center gap-2.5">
-                          <div className="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold">
+                          <div className="w-9 h-9 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold">
                             <Compass className="w-4 h-4" />
                           </div>
                           <div>
-                            <h4 className="font-bold text-slate-800">{group}</h4>
+                            <h4 className="font-bold text-slate-800 dark:text-slate-100">{group}</h4>
                             <p className="text-xs text-slate-400">
                               {groupMembers.length} {t.membersCount}
                             </p>
@@ -612,7 +612,7 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
                               onDeleteGpsGroup?.(group);
                             }
                           }}
-                          className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors"
+                          className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/60 rounded-xl transition-colors"
                           title={t.delete}
                         >
                           <Trash2 className="w-4 h-4" />
@@ -626,15 +626,15 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
                           groupMembers.map(m => {
                             const cleanHandle = cleanInstagramHandle(m.instagram);
                             return (
-                              <div key={m.id} className="flex items-center justify-between p-2.5 bg-slate-50/60 rounded-xl text-xs">
-                                <span className="font-bold text-slate-700">{m.name}</span>
+                              <div key={m.id} className="flex items-center justify-between p-2.5 bg-slate-50/60 dark:bg-slate-800/60 rounded-xl text-xs">
+                                <span className="font-bold text-slate-700 dark:text-slate-200">{m.name}</span>
                                 <div className="flex items-center gap-2">
                                   {cleanHandle && (
                                     <a
                                       href={`https://instagram.com/${cleanHandle}`}
                                       target="_blank"
                                       rel="noopener noreferrer"
-                                      className="text-pink-600 hover:underline flex items-center gap-1 font-medium"
+                                      className="text-pink-600 dark:text-pink-400 hover:underline flex items-center gap-1 font-medium"
                                     >
                                       <Instagram className="w-3 h-3" />
                                       @{cleanHandle}
@@ -646,7 +646,7 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
                                       setSelectedGpsToAssign(group);
                                       setMemberToAssignGps(m);
                                     }}
-                                    className="text-[10px] font-bold text-indigo-600 hover:underline px-1"
+                                    className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline px-1"
                                   >
                                     {t.edit}
                                   </button>
@@ -664,8 +664,8 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
           </div>
 
           {/* Unassigned Members Section */}
-          <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm">
-            <h3 className="text-base font-bold text-slate-800 mb-4 flex items-center justify-between">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm">
+            <h3 className="text-base font-bold text-slate-800 dark:text-slate-100 mb-4 flex items-center justify-between">
               <span className="flex items-center gap-2">
                 <Users className="w-5 h-5 text-slate-400" />
                 {t.unassignedGps}
@@ -677,22 +677,22 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
               {activeMembers.filter(m => !m.isGpsMember || !m.gpsName).length === 0 ? (
-                <div className="col-span-full text-center py-4 text-xs text-emerald-600 font-bold">
+                <div className="col-span-full text-center py-4 text-xs text-emerald-600 dark:text-emerald-400 font-bold">
                   ✓ {t.everyoneConnected}
                 </div>
               ) : (
                 activeMembers
                   .filter(m => !m.isGpsMember || !m.gpsName)
                   .map(m => (
-                    <div key={m.id} className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 border border-slate-100">
-                      <span className="text-xs font-bold text-slate-700 truncate mr-2">{m.name}</span>
+                    <div key={m.id} className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-100 dark:border-slate-700/60">
+                      <span className="text-xs font-bold text-slate-700 dark:text-slate-200 truncate mr-2">{m.name}</span>
                       <button
                         type="button"
                         onClick={() => {
                           setSelectedGpsToAssign(gpsGroups[0] || '');
                           setMemberToAssignGps(m);
                         }}
-                        className="px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-100 font-bold text-[10px] shrink-0 transition-colors"
+                        className="px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 font-bold text-[10px] shrink-0 transition-colors"
                       >
                         + {t.assign}
                       </button>
@@ -706,23 +706,23 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
         /* Regular Insights Overview */
         <>
           {/* Upcoming Birthdays Banner */}
-          <div className="bg-gradient-to-r from-amber-50 via-rose-50 to-indigo-50 border border-amber-200/60 rounded-3xl p-4 sm:p-5 shadow-sm">
+          <div className="bg-gradient-to-r from-amber-50 via-rose-50 to-indigo-50 dark:from-amber-950/40 dark:via-rose-950/30 dark:to-indigo-950/40 border border-amber-200/60 dark:border-amber-900/60 rounded-3xl p-4 sm:p-5 shadow-sm">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center shadow-sm">
                   <Gift className="w-4 h-4" />
                 </div>
-                <h3 className="text-sm font-black text-slate-800 tracking-tight">
+                <h3 className="text-sm font-black text-slate-800 dark:text-slate-100 tracking-tight">
                   {t.upcomingBirthdays}
                 </h3>
               </div>
-              <span className="text-[11px] font-bold text-amber-700 uppercase tracking-wider">
+              <span className="text-[11px] font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wider">
                 {t.birthdaysThisMonth}
               </span>
             </div>
 
             {upcomingBirthdays.length === 0 ? (
-              <p className="text-xs text-slate-500 italic py-1">{t.noUpcomingBirthdays}</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 italic py-1">{t.noUpcomingBirthdays}</p>
             ) : (
               <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
                 {upcomingBirthdays.map(({ member, nextBday, daysUntil }) => {
@@ -734,7 +734,7 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
                         "flex items-center gap-2 px-3 py-2 rounded-2xl shrink-0 border transition-all text-xs",
                         isToday 
                           ? "bg-amber-400 text-amber-950 border-amber-500 shadow-md font-bold animate-pulse" 
-                          : "bg-white/90 text-slate-700 border-amber-100 shadow-sm"
+                          : "bg-white/90 dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 border-amber-100 dark:border-amber-900/50 shadow-sm"
                       )}
                     >
                       <span className="font-bold">{member.name}</span>
@@ -746,7 +746,7 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
                           🎉 {language === 'es' ? '¡Hoy!' : 'Today!'}
                         </span>
                       ) : (
-                        <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-md">
+                        <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 px-1.5 py-0.5 rounded-md">
                           {daysUntil}d
                         </span>
                       )}
@@ -760,7 +760,7 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
           {/* Stats Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Active Growth Card with Toggleable Growth Chart */}
-            <div className="bg-indigo-600 rounded-[2.5rem] p-7 text-white shadow-xl shadow-indigo-100 relative overflow-hidden flex flex-col justify-between">
+            <div className="bg-indigo-600 rounded-[2.5rem] p-7 text-white shadow-xl shadow-indigo-100 dark:shadow-indigo-950 relative overflow-hidden flex flex-col justify-between">
               <div className="relative z-10">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
@@ -896,15 +896,15 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
               <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-white/5 rounded-full blur-3xl pointer-events-none" />
             </div>
 
-            <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm flex flex-col justify-between">
+            <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] p-8 border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col justify-between">
               <div className="flex items-center gap-2 mb-6">
-                <div className="p-2 bg-slate-50 rounded-lg">
+                <div className="p-2 bg-slate-50 dark:bg-slate-800 rounded-lg">
                   <Users className="w-5 h-5 text-slate-400" />
                 </div>
                 <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">{t.totalReach}</span>
               </div>
               <div>
-                <p className="text-5xl font-black text-slate-900 mb-1">{totalActiveReach}</p>
+                <p className="text-5xl font-black text-slate-900 dark:text-slate-100 mb-1">{totalActiveReach}</p>
                 <p className="text-slate-400 text-sm font-medium">{t.registeredMembers}</p>
               </div>
             </div>
@@ -915,14 +915,14 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
             <button 
               type="button"
               onClick={() => setExpandedStat('gps')}
-              className="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sm flex items-center gap-4 hover:border-indigo-300 hover:shadow-md transition-all text-left outline-none group cursor-pointer"
+              className="bg-white dark:bg-slate-900 rounded-[2rem] p-6 border border-slate-100 dark:border-slate-800 shadow-sm flex items-center gap-4 hover:border-indigo-300 dark:hover:border-indigo-700 hover:shadow-md transition-all text-left outline-none group cursor-pointer"
             >
-              <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center shrink-0 group-hover:bg-indigo-100 transition-colors">
+              <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 flex items-center justify-center shrink-0 group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/60 transition-colors">
                 <Compass className="w-6 h-6 text-indigo-500 group-hover:scale-110 transition-transform" />
               </div>
               <div>
-                <p className="text-xs font-black text-slate-300 uppercase tracking-widest mb-1">{t.gpsStats}</p>
-                <p className="text-xl font-black text-slate-800">
+                <p className="text-xs font-black text-slate-300 dark:text-slate-500 uppercase tracking-widest mb-1">{t.gpsStats}</p>
+                <p className="text-xl font-black text-slate-800 dark:text-slate-100">
                   {gpsMembersCount}/{totalActiveReach} <span className="text-xs font-medium text-slate-400 lowercase">{t.attendGps}</span>
                 </p>
               </div>
@@ -931,14 +931,14 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
             <button 
               type="button"
               onClick={() => setExpandedStat('evangelism')}
-              className="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sm flex items-center gap-4 hover:border-emerald-300 hover:shadow-md transition-all text-left outline-none group cursor-pointer"
+              className="bg-white dark:bg-slate-900 rounded-[2rem] p-6 border border-slate-100 dark:border-slate-800 shadow-sm flex items-center gap-4 hover:border-emerald-300 dark:hover:border-emerald-700 hover:shadow-md transition-all text-left outline-none group cursor-pointer"
             >
-              <div className="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center shrink-0 group-hover:bg-emerald-100 transition-colors">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 flex items-center justify-center shrink-0 group-hover:bg-emerald-100 dark:group-hover:bg-emerald-900/60 transition-colors">
                 <CheckCircle2 className="w-6 h-6 text-emerald-500 group-hover:scale-110 transition-transform" />
               </div>
               <div>
-                <p className="text-xs font-black text-slate-300 uppercase tracking-widest mb-1">{t.evangelizedStats}</p>
-                <p className="text-xl font-black text-slate-800">
+                <p className="text-xs font-black text-slate-300 dark:text-slate-500 uppercase tracking-widest mb-1">{t.evangelizedStats}</p>
+                <p className="text-xl font-black text-slate-800 dark:text-slate-100">
                   {evangelizedMembersCount}/{totalActiveReach} <span className="text-xs font-medium text-slate-400 lowercase">{t.areEvangelized}</span>
                 </p>
               </div>
@@ -949,13 +949,13 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
             <button 
               type="button"
               onClick={() => setExpandedStat('staff')}
-              className="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sm flex items-center sm:flex-col gap-4 hover:border-purple-300 hover:shadow-md transition-all text-left sm:text-center outline-none group cursor-pointer"
+              className="bg-white dark:bg-slate-900 rounded-[2rem] p-6 border border-slate-100 dark:border-slate-800 shadow-sm flex items-center sm:flex-col gap-4 hover:border-purple-300 dark:hover:border-purple-700 hover:shadow-md transition-all text-left sm:text-center outline-none group cursor-pointer"
             >
-              <div className="w-12 h-12 rounded-2xl bg-purple-50 flex items-center justify-center shrink-0 group-hover:bg-purple-100 transition-colors">
+              <div className="w-12 h-12 rounded-2xl bg-purple-50 dark:bg-purple-950/60 flex items-center justify-center shrink-0 group-hover:bg-purple-100 dark:group-hover:bg-purple-900/60 transition-colors">
                 <Shield className="w-6 h-6 text-purple-500 group-hover:scale-110 transition-transform" />
               </div>
               <div>
-                <p className="text-3xl font-black text-slate-800 mb-1">{staffCount}</p>
+                <p className="text-3xl font-black text-slate-800 dark:text-slate-100 mb-1">{staffCount}</p>
                 <p className="text-xs font-black text-slate-400 uppercase tracking-widest">{t.staffStats}</p>
               </div>
             </button>
@@ -963,13 +963,13 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
             <button 
               type="button"
               onClick={() => setExpandedStat('adults')}
-              className="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sm flex items-center sm:flex-col gap-4 hover:border-blue-300 hover:shadow-md transition-all text-left sm:text-center outline-none group cursor-pointer"
+              className="bg-white dark:bg-slate-900 rounded-[2rem] p-6 border border-slate-100 dark:border-slate-800 shadow-sm flex items-center sm:flex-col gap-4 hover:border-blue-300 dark:hover:border-blue-700 hover:shadow-md transition-all text-left sm:text-center outline-none group cursor-pointer"
             >
-              <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center shrink-0 group-hover:bg-blue-100 transition-colors">
+              <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-950/60 flex items-center justify-center shrink-0 group-hover:bg-blue-100 dark:group-hover:bg-blue-900/60 transition-colors">
                 <GraduationCap className="w-6 h-6 text-blue-500 group-hover:scale-110 transition-transform" />
               </div>
               <div>
-                <p className="text-3xl font-black text-slate-800 mb-1">{adultMembers.length}</p>
+                <p className="text-3xl font-black text-slate-800 dark:text-slate-100 mb-1">{adultMembers.length}</p>
                 <p className="text-xs font-black text-slate-400 uppercase tracking-widest">{t.adultStats}</p>
               </div>
             </button>
@@ -977,13 +977,13 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
             <button 
               type="button"
               onClick={() => setExpandedStat('teens')}
-              className="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sm flex items-center sm:flex-col gap-4 hover:border-pink-300 hover:shadow-md transition-all text-left sm:text-center outline-none group cursor-pointer"
+              className="bg-white dark:bg-slate-900 rounded-[2rem] p-6 border border-slate-100 dark:border-slate-800 shadow-sm flex items-center sm:flex-col gap-4 hover:border-pink-300 dark:hover:border-pink-700 hover:shadow-md transition-all text-left sm:text-center outline-none group cursor-pointer"
             >
-              <div className="w-12 h-12 rounded-2xl bg-pink-50 flex items-center justify-center shrink-0 group-hover:bg-pink-100 transition-colors">
+              <div className="w-12 h-12 rounded-2xl bg-pink-50 dark:bg-pink-950/60 flex items-center justify-center shrink-0 group-hover:bg-pink-100 dark:group-hover:bg-pink-900/60 transition-colors">
                 <Baby className="w-6 h-6 text-pink-500 group-hover:scale-110 transition-transform" />
               </div>
               <div>
-                <p className="text-3xl font-black text-slate-800 mb-1">{teenMembers.length}</p>
+                <p className="text-3xl font-black text-slate-800 dark:text-slate-100 mb-1">{teenMembers.length}</p>
                 <p className="text-xs font-black text-slate-400 uppercase tracking-widest">{t.teenStats}</p>
               </div>
             </button>
@@ -994,7 +994,7 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
             <div className="flex items-center justify-between mb-4 px-2">
               <div className="flex items-center gap-2">
                 <AlertCircle className="w-5 h-5 text-amber-500" />
-                <h3 className="text-lg font-bold text-slate-800">{t.needsConnection}</h3>
+                <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">{t.needsConnection}</h3>
               </div>
               <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">
                 {t.missedLast2Weeks || t.missedLast3}
@@ -1003,10 +1003,10 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
 
             <div className="flex-1 overflow-y-auto pr-2 space-y-3">
               {missingMembers.length === 0 ? (
-                <div className="bg-emerald-50 border border-emerald-100 rounded-3xl p-8 text-center">
+                <div className="bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-100 dark:border-emerald-900 rounded-3xl p-8 text-center">
                   <CheckCircle2 className="w-12 h-12 text-emerald-500 mx-auto mb-3" />
-                  <p className="text-emerald-900 font-bold">{t.everyoneConnected}</p>
-                  <p className="text-emerald-600 text-sm">{t.allAttended2Weeks || t.allAttended}</p>
+                  <p className="text-emerald-900 dark:text-emerald-200 font-bold">{t.everyoneConnected}</p>
+                  <p className="text-emerald-600 dark:text-emerald-400 text-sm">{t.allAttended2Weeks || t.allAttended}</p>
                 </div>
               ) : (
                 missingMembers.map(member => {
@@ -1016,14 +1016,14 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
                       key={member.id}
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="flex items-center justify-between p-5 bg-white rounded-3xl border border-slate-100 shadow-sm hover:border-amber-100 transition-all"
+                      className="flex items-center justify-between p-5 bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm hover:border-amber-100 dark:hover:border-amber-900/50 transition-all"
                     >
                       <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 font-bold">
+                        <div className="w-12 h-12 rounded-2xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-400 font-bold">
                           {member.name.charAt(0).toUpperCase()}
                         </div>
                         <div>
-                          <p className="font-bold text-slate-800">{member.name}</p>
+                          <p className="font-bold text-slate-800 dark:text-slate-100">{member.name}</p>
                           <div className="flex flex-wrap items-center gap-3 mt-0.5">
                             <span className="text-xs text-slate-400 flex items-center gap-1">
                               <Calendar className="w-3 h-3" />
@@ -1034,7 +1034,7 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
                                 href={`https://instagram.com/${cleanHandle}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-xs text-pink-600 hover:text-pink-700 hover:underline flex items-center gap-1 font-medium"
+                                className="text-xs text-pink-600 dark:text-pink-400 hover:text-pink-700 dark:hover:text-pink-300 hover:underline flex items-center gap-1 font-medium"
                               >
                                 <Instagram className="w-3 h-3" />
                                 @{cleanHandle}
@@ -1043,8 +1043,8 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
                           </div>
                         </div>
                       </div>
-                      <div className="px-4 py-2 bg-amber-50 rounded-2xl">
-                        <span className="text-[10px] font-black text-amber-600 uppercase tracking-widest">{t.atRisk}</span>
+                      <div className="px-4 py-2 bg-amber-50 dark:bg-amber-950/60 rounded-2xl">
+                        <span className="text-[10px] font-black text-amber-600 dark:text-amber-400 uppercase tracking-widest">{t.atRisk}</span>
                       </div>
                     </motion.div>
                   );

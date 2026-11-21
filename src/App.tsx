@@ -10,8 +10,8 @@ import { SettingsView } from './components/SettingsView';
 import { Language, translations } from './translations';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from './lib/utils';
-import { auth, db } from './lib/firebase';
-import { doc, onSnapshot, setDoc, getDoc, updateDoc, arrayUnion, arrayRemove, query, collection } from 'firebase/firestore';
+import { auth, db, getStateDocRef, getAttendanceDocRef, attendanceCollectionRef, subscribeToAttendance, migrateLegacyAttendanceIfNeeded } from './lib/firebase';
+import { onSnapshot, setDoc, getDoc, updateDoc, deleteDoc, getDocs, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 
 export default function App() {
@@ -56,54 +56,66 @@ export default function App() {
 
   // Listen to Cloud Updates
   useEffect(() => {
-    const docRef = doc(db, 'groups', 'main', 'data', 'state');
-    let unsubscribeDoc: (() => void) | null = null;
+    const stateDocRef = getStateDocRef();
+    let unsubscribeState: (() => void) | null = null;
+    let unsubscribeAttendance: (() => void) | null = null;
 
     const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
-      if (unsubscribeDoc) {
-        unsubscribeDoc();
-        unsubscribeDoc = null;
+      if (unsubscribeState) {
+        unsubscribeState();
+        unsubscribeState = null;
+      }
+      if (unsubscribeAttendance) {
+        unsubscribeAttendance();
+        unsubscribeAttendance = null;
       }
       if (!user) return;
 
       try {
-        const snap = await getDoc(docRef);
+        // Run one-time automatic migration if needed
+        await migrateLegacyAttendanceIfNeeded();
+
+        const snap = await getDoc(stateDocRef);
         if (!snap.exists()) {
           const localMembersStr = localStorage.getItem('yg_members');
-          const localAttendanceStr = localStorage.getItem('yg_attendance');
           const localGpsGroupsStr = localStorage.getItem('yg_gps_groups');
           const localMembers: Member[] = localMembersStr ? JSON.parse(localMembersStr) : [];
-          const localAttendance: AttendanceRecord[] = localAttendanceStr ? JSON.parse(localAttendanceStr) : [];
           const localGpsGroups: string[] = localGpsGroupsStr ? JSON.parse(localGpsGroupsStr) : [];
 
           const seedPayload = sanitizeForFirestore({
             members: localMembers,
-            attendanceRecords: localAttendance,
             gpsGroups: localGpsGroups,
             updatedAt: new Date().toISOString()
           });
-          await setDoc(docRef, seedPayload, { merge: true });
+          await setDoc(stateDocRef, seedPayload, { merge: true });
         }
       } catch (e) {
         console.warn('Initial check/seed doc error in App:', e);
       }
 
-      unsubscribeDoc = onSnapshot(docRef, (docSnap) => {
+      // Subscribe to member profiles and gpsGroups in state doc
+      unsubscribeState = onSnapshot(stateDocRef, (docSnap) => {
         if (docSnap.exists()) {
           const data = docSnap.data();
           if (data) {
             if (Array.isArray(data.members)) setMembers(data.members);
-            if (Array.isArray(data.attendanceRecords)) setAttendanceRecords(data.attendanceRecords);
             if (Array.isArray(data.gpsGroups)) setGpsGroups(data.gpsGroups);
           }
         }
       }, (error) => {
-        console.error('Firestore onSnapshot error:', error);
+        console.error('Firestore state onSnapshot error:', error);
+      });
+
+      // Subscribe to dedicated attendance subcollection
+      unsubscribeAttendance = subscribeToAttendance((records) => {
+        setAttendanceRecords(records);
+        localStorage.setItem('yg_attendance', JSON.stringify(records));
       });
     });
 
     return () => {
-      if (unsubscribeDoc) unsubscribeDoc();
+      if (unsubscribeState) unsubscribeState();
+      if (unsubscribeAttendance) unsubscribeAttendance();
       unsubscribeAuth();
     };
   }, []);
@@ -115,18 +127,17 @@ export default function App() {
     localStorage.setItem('yg_gps_groups', JSON.stringify(gpsGroups));
   }, [members, attendanceRecords, gpsGroups]);
 
-  // Helper to sync to cloud ONLY on explicitly triggered user modifications
-  const pushToCloud = async (m: Member[], a: AttendanceRecord[], g: string[] = gpsGroups) => {
+  // Helper to sync member profiles & gpsGroups to state doc (stripping all undefined fields)
+  const pushToCloud = async (m: Member[], g: string[] = gpsGroups) => {
     if (!auth.currentUser) return;
     try {
-      const docRef = doc(db, 'groups', 'main', 'data', 'state');
+      const stateDocRef = getStateDocRef();
       const payload = sanitizeForFirestore({
         members: m,
-        attendanceRecords: a,
         gpsGroups: g,
         updatedAt: new Date().toISOString()
       });
-      await setDoc(docRef, payload, { merge: true });
+      await setDoc(stateDocRef, payload, { merge: true });
     } catch (e) {
       console.error('Error syncing to Firestore:', e);
     }
@@ -141,7 +152,7 @@ export default function App() {
     if (!trimmed || gpsGroups.includes(trimmed)) return;
     const newGpsGroups = [...gpsGroups, trimmed];
     setGpsGroups(newGpsGroups);
-    pushToCloud(members, attendanceRecords, newGpsGroups);
+    pushToCloud(members, newGpsGroups);
   };
 
   const handleDeleteGpsGroup = (name: string) => {
@@ -149,7 +160,7 @@ export default function App() {
     const updatedMembers = members.map(m => m.gpsName === name ? { ...m, isGpsMember: false, gpsName: undefined } : m);
     setGpsGroups(newGpsGroups);
     setMembers(updatedMembers);
-    pushToCloud(updatedMembers, attendanceRecords, newGpsGroups);
+    pushToCloud(updatedMembers, newGpsGroups);
   };
 
   const handleAddMember = (data: { 
@@ -158,9 +169,15 @@ export default function App() {
     likes?: string; 
     likedFood?: string; 
     address?: string; 
-    phone?: string;
+    phone?: string; 
+    instagram?: string;
     isGpsMember?: boolean;
     gpsName?: string;
+    occupation?: 'none' | 'studying' | 'working' | 'both';
+    occupationTime?: 'morning' | 'night' | 'both' | 'none';
+    isEvangelized?: boolean;
+    isStaff?: boolean;
+    ministry?: string;
   }) => {
     const newMember: Member = {
       id: crypto.randomUUID(),
@@ -170,16 +187,22 @@ export default function App() {
       likedFood: data.likedFood,
       address: data.address,
       phone: data.phone,
+      instagram: data.instagram,
       isGpsMember: data.isGpsMember,
       gpsName: data.gpsName,
+      occupation: data.occupation,
+      occupationTime: data.occupationTime,
+      isEvangelized: data.isEvangelized,
+      isStaff: data.isStaff,
+      ministry: data.ministry,
       joinDate: new Date().toISOString(),
     };
     const newMembers = [...members, newMember];
     setMembers(newMembers);
-    pushToCloud(newMembers, attendanceRecords);
+    pushToCloud(newMembers, gpsGroups);
   };
 
-  const handleQuickAddMember = (name: string) => {
+  const handleQuickAddMember = async (name: string) => {
     const trimmed = name.trim();
     if (!trimmed) return;
     const newId = crypto.randomUUID();
@@ -206,13 +229,27 @@ export default function App() {
       newAttendance = [...newAttendance, { date: dateKey, presentMemberIds: [newId] }];
     }
     setAttendanceRecords(newAttendance);
-    pushToCloud(newMembers, newAttendance);
+    localStorage.setItem('yg_members', JSON.stringify(newMembers));
+    localStorage.setItem('yg_attendance', JSON.stringify(newAttendance));
+    pushToCloud(newMembers, gpsGroups);
+
+    if (auth.currentUser) {
+      try {
+        const docRef = getAttendanceDocRef(dateKey);
+        await setDoc(docRef, {
+          date: dateKey,
+          presentMemberIds: arrayUnion(newId)
+        }, { merge: true });
+      } catch (e) {
+        console.error('Error adding quick attendance in Firestore:', e);
+      }
+    }
   };
 
   const handleUpdateMember = (updatedMember: Member) => {
     const newMembers = members.map(m => m.id === updatedMember.id ? updatedMember : m);
     setMembers(newMembers);
-    pushToCloud(newMembers, attendanceRecords);
+    pushToCloud(newMembers, gpsGroups);
   };
 
   const handleBatchUpdateMembers = (updates: Partial<Member>[]) => {
@@ -224,26 +261,40 @@ export default function App() {
       }
     });
     setMembers(newMembers);
-    pushToCloud(newMembers, attendanceRecords);
+    pushToCloud(newMembers, gpsGroups);
   };
 
   const handleDeleteMember = (id: string) => {
     const newMembers = members.filter((m) => m.id !== id);
-    // Also clean up attendance records
     const newAttendance = attendanceRecords.map(record => ({
       ...record,
       presentMemberIds: record.presentMemberIds.filter(mid => mid !== id)
     }));
     setMembers(newMembers);
     setAttendanceRecords(newAttendance);
-    pushToCloud(newMembers, newAttendance);
+    pushToCloud(newMembers, gpsGroups);
+
+    if (auth.currentUser) {
+      attendanceRecords.forEach(async (r) => {
+        if (r.presentMemberIds.includes(id)) {
+          try {
+            await updateDoc(getAttendanceDocRef(r.date), {
+              presentMemberIds: arrayRemove(id)
+            });
+          } catch (e) {
+            console.error('Error removing deleted member from attendance:', e);
+          }
+        }
+      });
+    }
   };
 
-  const handleToggleAttendance = (date: string, memberId: string) => {
+  const handleToggleAttendance = async (date: string, memberId: string) => {
     let newAttendance = [...attendanceRecords];
     const existingRecord = newAttendance.find((r) => r.date === date);
+    const isPresent = existingRecord ? existingRecord.presentMemberIds.includes(memberId) : false;
+
     if (existingRecord) {
-      const isPresent = existingRecord.presentMemberIds.includes(memberId);
       const newPresentIds = isPresent
         ? existingRecord.presentMemberIds.filter((id) => id !== memberId)
         : [...existingRecord.presentMemberIds, memberId];
@@ -255,7 +306,25 @@ export default function App() {
       newAttendance = [...newAttendance, { date, presentMemberIds: [memberId] }];
     }
     setAttendanceRecords(newAttendance);
-    pushToCloud(members, newAttendance);
+    localStorage.setItem('yg_attendance', JSON.stringify(newAttendance));
+
+    if (auth.currentUser) {
+      const docRef = getAttendanceDocRef(date);
+      try {
+        if (isPresent) {
+          await updateDoc(docRef, {
+            presentMemberIds: arrayRemove(memberId)
+          });
+        } else {
+          await setDoc(docRef, {
+            date,
+            presentMemberIds: arrayUnion(memberId)
+          }, { merge: true });
+        }
+      } catch (e) {
+        console.error('Error updating attendance in Firestore:', e);
+      }
+    }
   };
 
   const handleImport = (data: { members: Member[]; attendanceRecords: AttendanceRecord[]; gpsGroups?: string[] }) => {
@@ -263,17 +332,41 @@ export default function App() {
     setAttendanceRecords(data.attendanceRecords);
     const groups = data.gpsGroups || [];
     setGpsGroups(groups);
-    pushToCloud(data.members, data.attendanceRecords, groups);
+    pushToCloud(data.members, groups);
+
+    if (auth.currentUser && Array.isArray(data.attendanceRecords)) {
+      data.attendanceRecords.forEach(async (rec) => {
+        try {
+          await setDoc(getAttendanceDocRef(rec.date), {
+            date: rec.date,
+            presentMemberIds: rec.presentMemberIds
+          }, { merge: true });
+        } catch (e) {
+          console.error('Error syncing imported attendance record:', e);
+        }
+      });
+    }
   };
 
-  const handleClearAll = () => {
+  const handleClearAll = async () => {
     setMembers([]);
     setAttendanceRecords([]);
     setGpsGroups([]);
     localStorage.removeItem('yg_members');
     localStorage.removeItem('yg_attendance');
     localStorage.removeItem('yg_gps_groups');
-    pushToCloud([], [], []);
+    pushToCloud([], []);
+
+    if (auth.currentUser) {
+      try {
+        const snap = await getDocs(attendanceCollectionRef);
+        snap.forEach(async (d) => {
+          await deleteDoc(d.ref);
+        });
+      } catch (e) {
+        console.error('Error clearing attendance subcollection:', e);
+      }
+    }
   };
 
   const navItems = [
@@ -329,7 +422,7 @@ export default function App() {
               <div className="p-6 md:p-8 flex flex-col gap-8 w-full lg:w-96">
                 <header className="mb-2">
                   <h1 className="text-sm font-bold text-indigo-600 uppercase tracking-[0.2em] mb-1">{t.youthGroup}</h1>
-                  <p className="text-3xl font-black text-slate-900 tracking-tight">{t.manager}</p>
+                  <p className="text-3xl font-black text-slate-900 dark:text-slate-100 tracking-tight">{t.manager}</p>
                 </header>
 
                 <Calendar 

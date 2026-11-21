@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from 'motion/react';
 interface SettingsViewProps {
   members: Member[];
   attendanceRecords: AttendanceRecord[];
-  onImport: (data: { members: Member[]; attendanceRecords: AttendanceRecord[] }) => void;
+  onImport: (data: { members: Member[]; attendanceRecords: AttendanceRecord[]; gpsGroups?: string[] }) => void;
   onClearAll: () => void;
   language: Language;
   onLanguageChange: (lang: Language) => void;
@@ -88,9 +88,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   };
 
   const handleExport = () => {
+    const localGpsGroupsStr = localStorage.getItem('yg_gps_groups');
+    const gpsGroups = localGpsGroupsStr ? JSON.parse(localGpsGroupsStr) : [];
     const data = {
       members,
       attendanceRecords,
+      gpsGroups,
       exportedAt: new Date().toISOString(),
       version: '2.0'
     };
@@ -162,7 +165,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         if (data.members && Array.isArray(data.members) && data.attendanceRecords && Array.isArray(data.attendanceRecords)) {
           onImport({
             members: data.members,
-            attendanceRecords: data.attendanceRecords
+            attendanceRecords: data.attendanceRecords,
+            gpsGroups: Array.isArray(data.gpsGroups) ? data.gpsGroups : undefined
           });
           setImportStatus('success');
           setTimeout(() => setImportStatus('idle'), 3000);

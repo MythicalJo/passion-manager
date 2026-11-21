@@ -63,30 +63,30 @@ export const Calendar: React.FC<CalendarProps> = ({ selectedDate, onDateSelect, 
   }, [birthdayMembers, selectedDate]);
 
   return (
-    <div className={cn("bg-white rounded-2xl shadow-sm border border-slate-200 p-6", className)}>
+    <div className={cn("bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6", className)}>
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-lg font-semibold text-slate-800 capitalize">
+        <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-100 capitalize">
           {format(currentMonth, 'MMMM yyyy', { locale })}
         </h2>
         <div className="flex gap-2">
           <button
             onClick={prevMonth}
-            className="p-2 hover:bg-slate-100 rounded-full transition-colors"
+            className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors"
           >
-            <ChevronLeft className="w-5 h-5 text-slate-600" />
+            <ChevronLeft className="w-5 h-5 text-slate-600 dark:text-slate-400" />
           </button>
           <button
             onClick={nextMonth}
-            className="p-2 hover:bg-slate-100 rounded-full transition-colors"
+            className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors"
           >
-            <ChevronRight className="w-5 h-5 text-slate-600" />
+            <ChevronRight className="w-5 h-5 text-slate-600 dark:text-slate-400" />
           </button>
         </div>
       </div>
 
       <div className="grid grid-cols-7 mb-2">
         {weekDays.map((day) => (
-          <div key={day} className="text-center text-xs font-medium text-slate-400 uppercase tracking-wider py-2">
+          <div key={day} className="text-center text-xs font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wider py-2">
             {day}
           </div>
         ))}
@@ -107,11 +107,11 @@ export const Calendar: React.FC<CalendarProps> = ({ selectedDate, onDateSelect, 
               onClick={() => onDateSelect(day)}
               className={cn(
                 "h-10 w-full flex flex-col items-center justify-center rounded-lg text-sm transition-all relative overflow-hidden",
-                !isCurrentMonth && "text-slate-300",
-                isCurrentMonth && !isSelected && "text-slate-600 hover:bg-slate-50",
+                !isCurrentMonth && "text-slate-300 dark:text-slate-600",
+                isCurrentMonth && !isSelected && "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800",
                 isSelected && "bg-indigo-600 text-white font-semibold shadow-md shadow-indigo-100",
-                !isSelected && isToday && "ring-2 ring-inset ring-indigo-300 text-indigo-700 font-bold",
-                hasService && !isSelected && "bg-indigo-50 text-indigo-700 font-medium"
+                !isSelected && isToday && "ring-2 ring-inset ring-indigo-300 dark:ring-indigo-600 text-indigo-700 dark:text-indigo-300 font-bold",
+                hasService && !isSelected && "bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 font-medium"
               )}
             >
               <div className="absolute top-1 right-1 flex gap-0.5">
@@ -121,7 +121,7 @@ export const Calendar: React.FC<CalendarProps> = ({ selectedDate, onDateSelect, 
               {hasService && (
                 <div className={cn(
                   "absolute bottom-1.5 w-1 h-1 rounded-full",
-                  isSelected ? "bg-white" : "bg-indigo-400"
+                  isSelected ? "bg-white" : "bg-indigo-400 dark:bg-indigo-500"
                 )} />
               )}
             </button>
@@ -130,14 +130,14 @@ export const Calendar: React.FC<CalendarProps> = ({ selectedDate, onDateSelect, 
       </div>
 
       {membersWithBirthdayToday.length > 0 && (
-        <div className="mt-4 p-3 bg-rose-50 rounded-xl border border-rose-100">
-           <p className="text-xs font-bold text-rose-600 mb-1 flex items-center gap-1">
+        <div className="mt-4 p-3 bg-rose-50 dark:bg-rose-950/40 rounded-xl border border-rose-100 dark:border-rose-900">
+           <p className="text-xs font-bold text-rose-600 dark:text-rose-400 mb-1 flex items-center gap-1">
              <Gift className="w-3 h-3" /> 
              {language === 'es' ? 'Cumpleaños en este día' : 'Birthdays on this date'}
            </p>
            <div className="flex flex-wrap gap-2">
              {membersWithBirthdayToday.map(m => (
-               <span key={m.id} className="text-sm font-medium text-rose-800 bg-white px-2 py-0.5 rounded-lg border border-rose-100">
+               <span key={m.id} className="text-sm font-medium text-rose-800 dark:text-rose-200 bg-white dark:bg-slate-800 px-2 py-0.5 rounded-lg border border-rose-100 dark:border-rose-900/60">
                  {m.name}
                </span>
              ))}
