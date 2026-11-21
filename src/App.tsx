@@ -22,6 +22,7 @@ export default function App() {
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
   const [gpsGroups, setGpsGroups] = useState<string[]>([]);
   const [language, setLanguage] = useState<Language>('es');
+  const [lastSync, setLastSync] = useState<string | null>(null);
   const [needRefresh, setNeedRefresh] = useState(false);
   const [updateServiceWorker, setUpdateServiceWorker] = useState<((reloadPage?: boolean) => Promise<void>) | null>(null);
   const [isDark, setIsDark] = useState<boolean>(() => {
@@ -98,12 +99,15 @@ export default function App() {
           const localMembers: Member[] = localMembersStr ? JSON.parse(localMembersStr) : [];
           const localGpsGroups: string[] = localGpsGroupsStr ? JSON.parse(localGpsGroupsStr) : [];
 
+          const nowStr = new Date().toISOString();
           const seedPayload = sanitizeForFirestore({
             members: localMembers,
             gpsGroups: localGpsGroups,
-            updatedAt: new Date().toISOString()
+            lastUpdated: nowStr,
+            updatedAt: nowStr
           });
           await setDoc(stateDocRef, seedPayload, { merge: true });
+          setLastSync(nowStr);
         }
       } catch (e) {
         console.warn('Initial check/seed doc error in App:', e);
@@ -116,6 +120,7 @@ export default function App() {
           if (data) {
             if (Array.isArray(data.members)) setMembers(data.members);
             if (Array.isArray(data.gpsGroups)) setGpsGroups(data.gpsGroups);
+            setLastSync(data.lastUpdated || data.updatedAt || new Date().toISOString());
           }
         }
       }, (error) => {
@@ -126,6 +131,7 @@ export default function App() {
       unsubscribeAttendance = subscribeToAttendance((records) => {
         setAttendanceRecords(records);
         localStorage.setItem('yg_attendance', JSON.stringify(records));
+        setLastSync(new Date().toISOString());
       });
     });
 
@@ -148,12 +154,15 @@ export default function App() {
     if (!auth.currentUser) return;
     try {
       const stateDocRef = getStateDocRef();
+      const nowStr = new Date().toISOString();
       const payload = sanitizeForFirestore({
         members: m,
         gpsGroups: g,
-        updatedAt: new Date().toISOString()
+        lastUpdated: nowStr,
+        updatedAt: nowStr
       });
       await setDoc(stateDocRef, payload, { merge: true });
+      setLastSync(nowStr);
     } catch (e) {
       console.error('Error syncing to Firestore:', e);
     }
@@ -256,6 +265,7 @@ export default function App() {
           date: dateKey,
           presentMemberIds: arrayUnion(newId)
         }, { merge: true });
+        setLastSync(new Date().toISOString());
       } catch (e) {
         console.error('Error adding quick attendance in Firestore:', e);
       }
@@ -337,6 +347,7 @@ export default function App() {
             presentMemberIds: arrayUnion(memberId)
           }, { merge: true });
         }
+        setLastSync(new Date().toISOString());
       } catch (e) {
         console.error('Error updating attendance in Firestore:', e);
       }
@@ -510,6 +521,7 @@ export default function App() {
                   onLanguageChange={setLanguage}
                   isDark={isDark}
                   onToggleDark={() => setIsDark(d => !d)}
+                  lastSync={lastSync}
                 />
               )}
             </motion.div>

@@ -15,6 +15,7 @@ interface SettingsViewProps {
   onLanguageChange: (lang: Language) => void;
   isDark: boolean;
   onToggleDark: () => void;
+  lastSync?: string | null;
 }
 
 const CLEAR_PHRASE = 'change da world';
@@ -28,6 +29,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   onLanguageChange,
   isDark,
   onToggleDark,
+  lastSync,
 }) => {
   const t = translations[language];
   const isEs = language === 'es';
@@ -45,6 +47,22 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
   const [debugDate, setDebugDate] = useState(getLastSyncDate());
   const [debugError, setDebugError] = useState(getLastError());
+
+  const formatSyncStatus = () => {
+    const dateValue = lastSync || (currentUser && debugDate && debugDate !== '1970-01-01T00:00:00.000Z' ? debugDate : null);
+    if (!dateValue) {
+      return isEs ? 'Esperando sincronización...' : 'Waiting for sync...';
+    }
+    const d = new Date(dateValue);
+    const time = d.getTime();
+    if (isNaN(time) || time <= 0) {
+      return isEs ? 'Esperando sincronización...' : 'Waiting for sync...';
+    }
+    if (Math.abs(Date.now() - time) < 5000) {
+      return isEs ? 'Justo ahora' : 'Just now';
+    }
+    return d.toLocaleString(isEs ? 'es-ES' : 'en-US');
+  };
 
   useEffect(() => {
     const unsubscribe = subscribeToAuth((user) => {
@@ -405,7 +423,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   Document: <span className="text-emerald-300">groups/main/data/state</span>
                 </p>
                 <p className="text-xs text-slate-300 font-mono">
-                  Last Sync: <span className="text-white">{debugDate}</span>
+                  Last Sync: <span className="text-white">{formatSyncStatus()}</span>
                 </p>
                 <p className="text-xs text-slate-300 font-mono flex flex-col gap-1">
                   Status: <span className={debugError === 'None' ? 'text-emerald-400' : 'text-rose-400'}>{debugError === 'None' ? 'Active Real-Time Sync' : debugError}</span>
