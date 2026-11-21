@@ -19,6 +19,7 @@ export const cleanInstagramHandle = (input?: string): string | undefined => {
 
 interface MemberListProps {
   members: Member[];
+  gpsGroups?: string[];
   onAddMember: (data: { 
     name: string; 
     birthday?: string; 
@@ -42,7 +43,7 @@ interface MemberListProps {
   language: Language;
 }
 
-export const MemberList: React.FC<MemberListProps> = ({ members, onAddMember, onUpdateMember, onBatchUpdateMembers, onDeleteMember, language }) => {
+export const MemberList: React.FC<MemberListProps> = ({ members, gpsGroups = [], onAddMember, onUpdateMember, onBatchUpdateMembers, onDeleteMember, language }) => {
   const t = translations[language];
   const locale = language === 'es' ? es : enUS;
   const [isAdding, setIsAdding] = useState(false);
@@ -133,6 +134,15 @@ export const MemberList: React.FC<MemberListProps> = ({ members, onAddMember, on
 
 
 
+  const scrollToMemberCard = (id: string) => {
+    setTimeout(() => {
+      const el = document.getElementById(`member-card-${id}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 150);
+  };
+
   const isDuplicateName = useMemo(() => {
     const name = formData.name.trim().toLowerCase();
     if (!name) return false;
@@ -144,6 +154,7 @@ export const MemberList: React.FC<MemberListProps> = ({ members, onAddMember, on
     if (formData.name.trim() && !isDuplicateName) {
       const cleanHandle = cleanInstagramHandle(formData.instagram);
       if (editingId) {
+        const targetId = editingId;
         const member = members.find(m => m.id === editingId);
         if (member) {
           onUpdateMember({
@@ -165,6 +176,7 @@ export const MemberList: React.FC<MemberListProps> = ({ members, onAddMember, on
           });
         }
         setEditingId(null);
+        scrollToMemberCard(targetId);
       } else {
         onAddMember({
           name: formData.name,
@@ -263,6 +275,7 @@ export const MemberList: React.FC<MemberListProps> = ({ members, onAddMember, on
   };
 
   const cancel = () => {
+    const targetId = editingId;
     setIsAdding(false);
     setEditingId(null);
     setFormData({ 
@@ -281,6 +294,9 @@ export const MemberList: React.FC<MemberListProps> = ({ members, onAddMember, on
       isStaff: false,
       ministry: ''
     });
+    if (targetId) {
+      scrollToMemberCard(targetId);
+    }
   };
 
   return (
@@ -521,14 +537,20 @@ export const MemberList: React.FC<MemberListProps> = ({ members, onAddMember, on
                       >
                         <div className="space-y-1">
                           <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">{t.gpsName}</label>
-                          <input
-                            type="text"
+                          <select
                             required={formData.isGpsMember}
                             value={formData.gpsName}
                             onChange={(e) => setFormData({ ...formData, gpsName: e.target.value })}
-                            placeholder={t.gpsPlaceholder}
-                            className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all bg-white"
-                          />
+                            className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all bg-white font-medium text-slate-700"
+                          >
+                            <option value="">{t.selectGpsGroup}</option>
+                            {gpsGroups.map((grp) => (
+                              <option key={grp} value={grp}>{grp}</option>
+                            ))}
+                            {formData.gpsName && !gpsGroups.includes(formData.gpsName) && (
+                              <option value={formData.gpsName}>{formData.gpsName}</option>
+                            )}
+                          </select>
                         </div>
                       </motion.div>
                     )}
@@ -700,6 +722,7 @@ export const MemberList: React.FC<MemberListProps> = ({ members, onAddMember, on
                       
                       return (
                         <motion.div
+                          id={`member-card-${member.id}`}
                           key={member.id}
                           layout
                           initial={{ opacity: 0, y: 10 }}

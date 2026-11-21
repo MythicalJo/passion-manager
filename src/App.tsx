@@ -10,36 +10,87 @@ import { SettingsView } from './components/SettingsView';
 import { Language, translations } from './translations';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from './lib/utils';
-import { syncToCloud, listenToCloud, SyncData } from './lib/gists';
+import { auth, db } from './lib/firebase';
+import { doc, onSnapshot, setDoc, getDoc } from 'firebase/firestore';
+import { onAuthStateChanged } from 'firebase/auth';
 
 export default function App() {
   const [view, setView] = useState<ViewMode>('attendance');
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [members, setMembers] = useState<Member[]>([]);
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
+  const [gpsGroups, setGpsGroups] = useState<string[]>([]);
   const [language, setLanguage] = useState<Language>('es');
 
   const t = translations[language];
+
+  const sanitizeForFirestore = <T,>(data: T): T => {
+    return JSON.parse(JSON.stringify(data));
+  };
 
   // Load data from localStorage
   useEffect(() => {
     const savedMembers = localStorage.getItem('yg_members');
     const savedAttendance = localStorage.getItem('yg_attendance');
     const savedLanguage = localStorage.getItem('yg_language');
+    const savedGpsGroups = localStorage.getItem('yg_gps_groups');
     if (savedMembers) setMembers(JSON.parse(savedMembers));
     if (savedAttendance) setAttendanceRecords(JSON.parse(savedAttendance));
     if (savedLanguage) setLanguage(savedLanguage as Language);
+    if (savedGpsGroups) setGpsGroups(JSON.parse(savedGpsGroups));
   }, []);
 
   // Listen to Cloud Updates
   useEffect(() => {
-    const unsubscribe = listenToCloud((data: SyncData) => {
-      if (data.members) setMembers(data.members);
-      if (data.attendanceRecords) setAttendanceRecords(data.attendanceRecords);
+    const docRef = doc(db, 'groups', 'main', 'data', 'state');
+    let unsubscribeDoc: (() => void) | null = null;
+
+    const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
+      if (unsubscribeDoc) {
+        unsubscribeDoc();
+        unsubscribeDoc = null;
+      }
+      if (!user) return;
+
+      try {
+        const snap = await getDoc(docRef);
+        if (!snap.exists()) {
+          const localMembersStr = localStorage.getItem('yg_members');
+          const localAttendanceStr = localStorage.getItem('yg_attendance');
+          const localGpsGroupsStr = localStorage.getItem('yg_gps_groups');
+          const localMembers: Member[] = localMembersStr ? JSON.parse(localMembersStr) : [];
+          const localAttendance: AttendanceRecord[] = localAttendanceStr ? JSON.parse(localAttendanceStr) : [];
+          const localGpsGroups: string[] = localGpsGroupsStr ? JSON.parse(localGpsGroupsStr) : [];
+
+          const seedPayload = sanitizeForFirestore({
+            members: localMembers,
+            attendanceRecords: localAttendance,
+            gpsGroups: localGpsGroups,
+            updatedAt: new Date().toISOString()
+          });
+          await setDoc(docRef, seedPayload, { merge: true });
+        }
+      } catch (e) {
+        console.warn('Initial check/seed doc error in App:', e);
+      }
+
+      unsubscribeDoc = onSnapshot(docRef, (docSnap) => {
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          if (data) {
+            if (Array.isArray(data.members)) setMembers(data.members);
+            if (Array.isArray(data.attendanceRecords)) setAttendanceRecords(data.attendanceRecords);
+            if (Array.isArray(data.gpsGroups)) setGpsGroups(data.gpsGroups);
+          }
+        }
+      }, (error) => {
+        console.error('Firestore onSnapshot error:', error);
+      });
     });
 
     return () => {
-      unsubscribe();
+      if (unsubscribeDoc) unsubscribeDoc();
+      unsubscribeAuth();
     };
   }, []);
 
@@ -47,16 +98,45 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('yg_members', JSON.stringify(members));
     localStorage.setItem('yg_attendance', JSON.stringify(attendanceRecords));
-  }, [members, attendanceRecords]);
+    localStorage.setItem('yg_gps_groups', JSON.stringify(gpsGroups));
+  }, [members, attendanceRecords, gpsGroups]);
 
   // Helper to sync to cloud ONLY on explicitly triggered user modifications
-  const pushToCloud = (m: Member[], a: AttendanceRecord[]) => {
-    syncToCloud({ members: m, attendanceRecords: a, updatedAt: new Date().toISOString() });
+  const pushToCloud = async (m: Member[], a: AttendanceRecord[], g: string[] = gpsGroups) => {
+    if (!auth.currentUser) return;
+    try {
+      const docRef = doc(db, 'groups', 'main', 'data', 'state');
+      const payload = sanitizeForFirestore({
+        members: m,
+        attendanceRecords: a,
+        gpsGroups: g,
+        updatedAt: new Date().toISOString()
+      });
+      await setDoc(docRef, payload, { merge: true });
+    } catch (e) {
+      console.error('Error syncing to Firestore:', e);
+    }
   };
 
   useEffect(() => {
     localStorage.setItem('yg_language', language);
   }, [language]);
+
+  const handleAddGpsGroup = (name: string) => {
+    const trimmed = name.trim();
+    if (!trimmed || gpsGroups.includes(trimmed)) return;
+    const newGpsGroups = [...gpsGroups, trimmed];
+    setGpsGroups(newGpsGroups);
+    pushToCloud(members, attendanceRecords, newGpsGroups);
+  };
+
+  const handleDeleteGpsGroup = (name: string) => {
+    const newGpsGroups = gpsGroups.filter((g) => g !== name);
+    const updatedMembers = members.map(m => m.gpsName === name ? { ...m, isGpsMember: false, gpsName: undefined } : m);
+    setGpsGroups(newGpsGroups);
+    setMembers(updatedMembers);
+    pushToCloud(updatedMembers, attendanceRecords, newGpsGroups);
+  };
 
   const handleAddMember = (data: { 
     name: string; 
@@ -164,18 +244,22 @@ export default function App() {
     pushToCloud(members, newAttendance);
   };
 
-  const handleImport = (data: { members: Member[]; attendanceRecords: AttendanceRecord[] }) => {
+  const handleImport = (data: { members: Member[]; attendanceRecords: AttendanceRecord[]; gpsGroups?: string[] }) => {
     setMembers(data.members);
     setAttendanceRecords(data.attendanceRecords);
-    pushToCloud(data.members, data.attendanceRecords);
+    const groups = data.gpsGroups || [];
+    setGpsGroups(groups);
+    pushToCloud(data.members, data.attendanceRecords, groups);
   };
 
   const handleClearAll = () => {
     setMembers([]);
     setAttendanceRecords([]);
+    setGpsGroups([]);
     localStorage.removeItem('yg_members');
     localStorage.removeItem('yg_attendance');
-    pushToCloud([], []);
+    localStorage.removeItem('yg_gps_groups');
+    pushToCloud([], [], []);
   };
 
   const navItems = [
@@ -274,6 +358,7 @@ export default function App() {
               {view === 'members' && (
                 <MemberList
                   members={members}
+                  gpsGroups={gpsGroups}
                   onAddMember={handleAddMember}
                   onUpdateMember={handleUpdateMember}
                   onBatchUpdateMembers={handleBatchUpdateMembers}
@@ -285,6 +370,10 @@ export default function App() {
                 <CommunityView
                   members={members}
                   attendanceRecords={attendanceRecords}
+                  gpsGroups={gpsGroups}
+                  onAddGpsGroup={handleAddGpsGroup}
+                  onDeleteGpsGroup={handleDeleteGpsGroup}
+                  onUpdateMember={handleUpdateMember}
                   language={language}
                 />
               )}

@@ -13,6 +13,7 @@ export interface Member {
   occupation?: 'none' | 'studying' | 'working' | 'both';
   occupationTime?: 'morning' | 'night' | 'both' | 'none';
   isEvangelized?: boolean;
+  evangelizado?: boolean;
   isArchived?: boolean;
   isStaff?: boolean;
   ministry?: string;

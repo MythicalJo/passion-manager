@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { format, addDays, isSameDay, differenceInDays, parseISO } from 'date-fns';
 import { enUS, es } from 'date-fns/locale';
 import { Check, X, Users, Calendar as CalendarIcon, Search, ChevronLeft, ChevronRight, UserPlus, Plus } from 'lucide-react';
@@ -18,6 +18,13 @@ interface AttendanceTrackerProps {
   onQuickAddMember?: (name: string) => void;
 }
 
+interface UndoToastState {
+  memberId: string;
+  memberName: string;
+  action: 'present' | 'absent';
+  date: string;
+}
+
 export const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
   selectedDate,
   members,
@@ -28,12 +35,25 @@ export const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
   onQuickAddMember,
 }) => {
   const t = translations[language];
-  const locale = language === 'es' ? es : enUS;
+  const isEs = language === 'es';
+  const locale = isEs ? es : enUS;
   const [searchQuery, setSearchQuery] = useState('');
   const [showCalendar, setShowCalendar] = useState(false);
   const [activeFilter, setActiveFilter] = useState<'all' | 'present' | 'absent2Weeks'>('all');
   const [internalDate, setInternalDate] = useState<Date | null>(null);
   const [localMembers, setLocalMembers] = useState<Member[]>([]);
+
+  // Undo Toast state & timer
+  const [toast, setToast] = useState<UndoToastState | null>(null);
+  const toastTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (toastTimerRef.current) {
+        clearTimeout(toastTimerRef.current);
+      }
+    };
+  }, []);
 
   const effectiveDate = onDateSelect ? selectedDate : (internalDate ?? selectedDate);
   const dateKey = format(effectiveDate, 'yyyy-MM-dd');
@@ -59,43 +79,104 @@ export const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
     return [...members, ...newlyAdded];
   }, [members, localMembers]);
 
+  // Never-Attended Rule: Members with 0 total attendance records are NEVER flagged as at-risk/absent.
+  // Only flag members who have attended at least 1 meeting previously AND whose last attended date was 14+ days ago.
   const isAbsentTwoPlusWeeks = useCallback((member: Member) => {
     if (member.isArchived) return false;
     const now = new Date();
 
-    if (member.joinDate) {
-      try {
-        const daysSinceJoin = differenceInDays(now, parseISO(member.joinDate));
-        if (daysSinceJoin < 14) return false;
-      } catch {
-        // ignore
+    const isPresentOnSelectedDate = presentIds.includes(member.id);
+
+    const attendedDates: string[] = [];
+    attendanceRecords.forEach(r => {
+      if (r.date === dateKey) {
+        if (isPresentOnSelectedDate) attendedDates.push(r.date);
+      } else {
+        if (r.presentMemberIds.includes(member.id)) attendedDates.push(r.date);
+      }
+    });
+    if (isPresentOnSelectedDate && !attendanceRecords.some(r => r.date === dateKey)) {
+      attendedDates.push(dateKey);
+    }
+
+    // Members with 0 total attendance records across all dates are NEVER flagged
+    if (attendedDates.length === 0) return false;
+
+    attendedDates.sort((a, b) => b.localeCompare(a));
+    const lastAttendedDate = attendedDates[0];
+
+    try {
+      const daysSinceLastAttended = differenceInDays(now, parseISO(lastAttendedDate));
+      return daysSinceLastAttended >= 14;
+    } catch {
+      return false;
+    }
+  }, [attendanceRecords, presentIds, dateKey]);
+
+  // Newcomer check: joinDate is within the last 14 days
+  const isNewcomer = useCallback((member: Member): boolean => {
+    if (!member.joinDate) return false;
+    try {
+      const now = new Date();
+      const days = differenceInDays(now, parseISO(member.joinDate));
+      return days >= 0 && days <= 14;
+    } catch {
+      return false;
+    }
+  }, []);
+
+  // Streak Counter: 4 or more consecutive attended meetings
+  const calculateStreak = useCallback((memberId: string): number => {
+    const isPresentCurrent = presentIds.includes(memberId);
+    const meetingDatesSet = new Set<string>(
+      attendanceRecords
+        .filter(r => r.presentMemberIds.length > 0 || r.date === dateKey)
+        .map(r => r.date)
+    );
+    if (isPresentCurrent) meetingDatesSet.add(dateKey);
+
+    const sortedDates = Array.from(meetingDatesSet).sort((a: string, b: string) => b.localeCompare(a));
+    if (sortedDates.length === 0) return 0;
+
+    let streakLatest = 0;
+    for (const d of sortedDates) {
+      const present = d === dateKey
+        ? isPresentCurrent
+        : (attendanceRecords.find(r => r.date === d)?.presentMemberIds.includes(memberId) ?? false);
+      if (present) {
+        streakLatest++;
+      } else {
+        break;
       }
     }
 
-    const sortedRecords = [...attendanceRecords].sort((a, b) => b.date.localeCompare(a.date));
-    const servicesLast14Days = sortedRecords.filter(r => {
-      try {
-        const days = differenceInDays(now, parseISO(r.date));
-        return days >= 0 && days <= 14;
-      } catch {
-        return false;
+    let streakPast = 0;
+    const pastDates = sortedDates.filter(d => d < dateKey);
+    for (const d of pastDates) {
+      const present = attendanceRecords.find(r => r.date === d)?.presentMemberIds.includes(memberId) ?? false;
+      if (present) {
+        streakPast++;
+      } else {
+        break;
       }
-    });
+    }
 
-    const targetServices = servicesLast14Days.length > 0 
-      ? servicesLast14Days 
-      : sortedRecords.slice(0, 2);
-
-    if (targetServices.length === 0) return false;
-
-    const attendedAny = targetServices.some(rec => {
-      if (rec.date === dateKey) {
-        return presentIds.includes(member.id);
+    let maxConsecutive = 0;
+    let currentRun = 0;
+    const chronologicalDates = [...sortedDates].sort((a: string, b: string) => a.localeCompare(b));
+    for (const d of chronologicalDates) {
+      const present = d === dateKey
+        ? isPresentCurrent
+        : (attendanceRecords.find(r => r.date === d)?.presentMemberIds.includes(memberId) ?? false);
+      if (present) {
+        currentRun++;
+        if (currentRun > maxConsecutive) maxConsecutive = currentRun;
+      } else {
+        currentRun = 0;
       }
-      return rec.presentMemberIds.includes(member.id);
-    });
+    }
 
-    return !attendedAny;
+    return Math.max(streakLatest, streakPast, maxConsecutive);
   }, [attendanceRecords, presentIds, dateKey]);
 
   const filteredMembers = useMemo(() => {
@@ -115,6 +196,37 @@ export const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
     total: allMembers.filter(m => !m.isArchived).length,
     present: presentIds.length,
     absent: allMembers.filter(m => !m.isArchived).length - presentIds.length,
+  };
+
+  const handleToggle = (member: Member) => {
+    const isCurrentlyPresent = presentIds.includes(member.id);
+    const newAction = isCurrentlyPresent ? 'absent' : 'present';
+
+    onToggleAttendance(dateKey, member.id);
+
+    if (toastTimerRef.current) {
+      clearTimeout(toastTimerRef.current);
+    }
+
+    setToast({
+      memberId: member.id,
+      memberName: member.name,
+      action: newAction,
+      date: dateKey,
+    });
+
+    toastTimerRef.current = setTimeout(() => {
+      setToast(null);
+    }, 4000);
+  };
+
+  const handleUndo = () => {
+    if (!toast) return;
+    if (toastTimerRef.current) {
+      clearTimeout(toastTimerRef.current);
+    }
+    onToggleAttendance(toast.date, toast.memberId);
+    setToast(null);
   };
 
   const handleQuickAdd = () => {
@@ -142,8 +254,11 @@ export const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
     { id: 'absent2Weeks' as const, label: 'Absent 2+ Weeks' },
   ];
 
+  const quickAddText = (t.quickAddMarkPresent || "+ Quick Add '{name}' & Mark Present")
+    .replace('{name}', searchQuery.trim());
+
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full relative">
       {/* Header and Compact Horizontal Date Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
         <div>
@@ -296,7 +411,7 @@ export const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
                   className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-md shadow-indigo-100 transition-all hover:scale-[1.02] active:scale-[0.98]"
                 >
                   <Plus className="w-4 h-4" />
-                  <span>+ Quick Add '{searchQuery.trim()}' & Mark Present</span>
+                  <span>{quickAddText}</span>
                 </button>
               </div>
             ) : (
@@ -309,6 +424,9 @@ export const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
             <AnimatePresence mode="popLayout">
               {filteredMembers.map((member) => {
                 const isPresent = presentIds.includes(member.id);
+                const streak = calculateStreak(member.id);
+                const newcomer = isNewcomer(member);
+
                 return (
                   <motion.button
                     key={member.id}
@@ -317,30 +435,47 @@ export const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.95 }}
                     whileTap={{ scale: 0.98 }}
-                    onClick={() => onToggleAttendance(dateKey, member.id)}
+                    onClick={() => handleToggle(member)}
                     className={cn(
-                      "w-full flex items-center justify-between p-4 rounded-2xl border transition-all duration-200",
+                      "w-full flex items-center justify-between p-4 rounded-2xl border transition-all duration-200 text-left",
                       isPresent 
                         ? "bg-emerald-50 border-emerald-100 shadow-sm" 
                         : "bg-white border-slate-100 hover:border-slate-200"
                     )}
                   >
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
                       <div className={cn(
-                        "w-10 h-10 rounded-full flex items-center justify-center font-bold transition-colors",
+                        "w-10 h-10 rounded-full flex items-center justify-center font-bold transition-colors shrink-0",
                         isPresent ? "bg-emerald-500 text-white" : "bg-slate-100 text-slate-400"
                       )}>
                         {member.name.charAt(0).toUpperCase()}
                       </div>
-                      <span className={cn(
-                        "font-semibold transition-colors",
-                        isPresent ? "text-emerald-900" : "text-slate-700"
-                      )}>
-                        {member.name}
-                      </span>
+                      <div className="flex flex-wrap items-center gap-1.5 min-w-0">
+                        <span className={cn(
+                          "font-semibold transition-colors truncate",
+                          isPresent ? "text-emerald-900" : "text-slate-700"
+                        )}>
+                          {member.name}
+                        </span>
+                        {member.isStaff && (
+                          <span className="px-1.5 py-0.5 rounded bg-purple-100 text-purple-700 text-[9px] font-black uppercase tracking-wider shrink-0">
+                            {t.staff}
+                          </span>
+                        )}
+                        {newcomer && (
+                          <span className="px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-700 text-[10px] font-bold uppercase tracking-wider border border-emerald-100/80 shrink-0">
+                            {t.newBadge || (isEs ? 'Nuevo' : 'New')}
+                          </span>
+                        )}
+                        {streak >= 4 && (
+                          <span className="px-1.5 py-0.5 rounded-md bg-amber-50 text-amber-700 text-[10px] font-bold tracking-wider border border-amber-200/80 shrink-0 flex items-center gap-0.5">
+                            🔥 4+
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <div className={cn(
-                      "w-8 h-8 rounded-full flex items-center justify-center transition-all",
+                      "w-8 h-8 rounded-full flex items-center justify-center transition-all shrink-0 ml-2",
                       isPresent 
                         ? "bg-emerald-500 text-white scale-110" 
                         : "bg-slate-50 text-slate-300"
@@ -354,6 +489,40 @@ export const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
           )}
         </div>
       </div>
+
+      {/* Undo Toast (4 seconds) */}
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            transition={{ duration: 0.2 }}
+            role="status"
+            aria-live="polite"
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-2 text-sm font-medium border border-slate-700 whitespace-nowrap max-w-[90vw]"
+          >
+            <span>
+              {toast.action === 'present'
+                ? (t.markedPresentUndo
+                    ? t.markedPresentUndo.replace('{name}', toast.memberName).split('—')[0].trim()
+                    : `Marked ${toast.memberName} present`)
+                : (t.markedAbsentUndo
+                    ? t.markedAbsentUndo.replace('{name}', toast.memberName).split('—')[0].trim()
+                    : `Marked ${toast.memberName} absent`)}
+            </span>
+            <span className="text-slate-400">—</span>
+            <button
+              type="button"
+              onClick={handleUndo}
+              aria-label="Undo"
+              className="text-amber-400 hover:text-amber-300 font-bold underline transition-colors"
+            >
+              {t.undo || (isEs ? 'Deshacer' : 'Undo')}
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
